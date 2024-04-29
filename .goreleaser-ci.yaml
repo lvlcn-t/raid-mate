@@ -1,9 +1,11 @@
-project_name: meta
+project_name: raid-mate
 snapshot:
   name_template: "commit-{{ .ShortCommit }}"
 builds:
   - env: [CGO_ENABLED=0]
     main: ./cmd/app
+    flags:
+      - -tags=viper_bind_struct
     ldflags:
       - -s -w -X main.version={{ .Version }}
       - -extldflags "-static"
@@ -14,13 +16,13 @@ builds:
       - arm64
 dockers:
   - image_templates:
-      - "ghcr.io/lvlcn-t/meta:{{ .Version }}"
+      - "ghcr.io/lvlcn-t/raid-mate:{{ .Version }}"
     dockerfile: Dockerfile
     build_flag_templates:
       - --label=org.opencontainers.image.title={{ .ProjectName }}
       - --label=org.opencontainers.image.description="This is a pre-release version. Do not use this in production!"
       - --label=org.opencontainers.image.url=https://lvlcn-t.dev
-      - --label=org.opencontainers.image.source=https://github.com/lvlcn-t/meta
+      - --label=org.opencontainers.image.source=https://github.com/lvlcn-t/raid-mate
       - --label=org.opencontainers.image.version={{ .Version }}
       - --label=org.opencontainers.image.created={{ .Timestamp }}
       - --label=org.opencontainers.image.revision={{ .FullCommit }}
