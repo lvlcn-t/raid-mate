@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/lvlcn-t/go-kit/config"
+	"github.com/lvlcn-t/raid-mate/bot"
 )
 
 type Config struct {
-	// TODO: add actual configuration fields
-	Host string `mapstructure:"host"`
+	Bot bot.Config `yaml:"bot" mapstructure:"bot"`
 }
 
 func (c Config) IsEmpty() bool {
