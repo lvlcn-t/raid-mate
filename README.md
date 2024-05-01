@@ -1,10 +1,11 @@
 # Project Name<!-- omit from toc -->
 
-<!-- markdownlint-disable-next-line -->
+<!-- markdownlint-disable MD033 -->
 <p align="center">
     <a href="/../../commits/" title="Last Commit"><img alt="Last Commit" src="https://img.shields.io/github/last-commit/lvlcn-t/lvlcn-t?style=flat"></a>
     <a href="/../../issues" title="Open Issues"><img alt="Open Issues" src="https://img.shields.io/github/issues/lvlcn-t/lvlcn-t?style=flat"></a>
 </p>
+<!-- markdownlint-enable MD033 -->
 
 - [About this component](#about-this-component)
 - [Installation](#installation)
