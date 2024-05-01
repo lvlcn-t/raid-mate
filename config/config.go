@@ -15,7 +15,7 @@ func (c Config) IsEmpty() bool {
 	return c == (Config{})
 }
 
-func (c Config) Validate(ctx context.Context) error {
+func (c Config) Validate(_ context.Context) error {
 	return nil
 }
 

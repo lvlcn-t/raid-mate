@@ -45,11 +45,11 @@ func New(cfg Config) (Bot, error) {
 }
 
 // Run starts the bot and blocks until it is stopped.
-func (b *bot) Run(ctx context.Context) error {
+func (b *bot) Run(_ context.Context) error {
 	return nil
 }
 
 // Shutdown stops the bot.
-func (b *bot) Shutdown(ctx context.Context) error {
+func (b *bot) Shutdown(_ context.Context) error {
 	return nil
 }

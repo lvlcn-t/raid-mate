@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"os"
 	"os/signal"
@@ -23,7 +22,6 @@ func main() {
 
 	var cfgPath string
 	flag.StringVar(&cfgPath, "config", "", "Path to the configuration file")
-	flag.ErrHelp = errors.New("usage: raid-mate -config <path>")
 	flag.Parse()
 
 	cfg, err := config.Load(cfgPath)
@@ -40,20 +38,20 @@ func main() {
 	defer close(sigChan)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	bot, err := bot.New(cfg.Bot)
+	b, err := bot.New(cfg.Bot)
 	if err != nil {
 		log.FatalContext(ctx, "Failed to create bot", "error", err)
 	}
 
 	cErr := make(chan error, 1)
 	go func() {
-		cErr <- bot.Run(ctx)
+		cErr <- b.Run(ctx)
 	}()
 
 	select {
 	case <-sigChan:
 		log.InfoContext(ctx, "Received signal, shutting down")
-		err = bot.Shutdown(ctx)
+		err = b.Shutdown(ctx)
 		<-cErr
 	case err = <-cErr:
 	}
