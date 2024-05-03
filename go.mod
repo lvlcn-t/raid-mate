@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/bwmarrin/discordgo v0.28.1
-	github.com/lvlcn-t/go-kit v0.1.1
+	github.com/lvlcn-t/go-kit v0.2.0
 	github.com/lvlcn-t/loggerhead v0.3.1
 )
 
