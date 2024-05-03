@@ -8,8 +8,8 @@ import (
 	"syscall"
 
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/bot"
-	"github.com/lvlcn-t/raid-mate/config"
+	"github.com/lvlcn-t/raid-mate/internal/bot"
+	"github.com/lvlcn-t/raid-mate/internal/config"
 )
 
 // version is set on build time

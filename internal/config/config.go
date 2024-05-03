@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/lvlcn-t/go-kit/config"
-	"github.com/lvlcn-t/raid-mate/bot"
+	"github.com/lvlcn-t/raid-mate/internal/bot"
 )
 
 type Config struct {
