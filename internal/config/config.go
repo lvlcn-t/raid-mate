@@ -11,14 +11,14 @@ type Config struct {
 	Bot bot.Config `yaml:"bot" mapstructure:"bot"`
 }
 
-func (c Config) IsEmpty() bool {
-	return c == (Config{})
+func (c *Config) IsEmpty() bool {
+	return c == (&Config{})
 }
 
 func (c Config) Validate(_ context.Context) error {
 	return nil
 }
 
-func Load(path string) (Config, error) {
-	return config.Load[Config](path)
+func Load(path string) (*Config, error) {
+	return config.Load[*Config](path)
 }
