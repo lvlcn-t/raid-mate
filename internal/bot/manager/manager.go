@@ -11,7 +11,10 @@ import (
 )
 
 // shutdownTimeout is the timeout for shutting down all shards.
-const shutdownTimeout = 20 * time.Second
+const (
+	shutdownTimeout = 20 * time.Second
+	rateLimit       = 5
+)
 
 // Manager is responsible for creating and managing all shards.
 // It is safe for simultaneous use by multiple goroutines.
@@ -95,7 +98,7 @@ func (m *Manager) Start(ctx context.Context) error {
 		})
 
 		if id != len(m.shards)-1 {
-			connect = connect.WithRateLimit(5)
+			connect = connect.WithRateLimit(rateLimit)
 		}
 
 		if err := connect.Do(ctx); err != nil {
@@ -201,7 +204,7 @@ func (m *Manager) RegisterCommand(guildID string, cmd *discordgo.ApplicationComm
 	defer m.mu.RUnlock()
 
 	for _, shard := range m.shards {
-		if rErr := shard.RegisterCommand(guildID, cmd); err != nil {
+		if rErr := shard.RegisterCommand(guildID, cmd); rErr != nil {
 			err = errors.Join(err, rErr)
 		}
 	}
@@ -216,7 +219,7 @@ func (m *Manager) RegisterCommandsOverwrite(guildID string, cmds []*discordgo.Ap
 	defer m.mu.RUnlock()
 
 	for _, shard := range m.shards {
-		if rErr := shard.RegisterCommandsOverwrite(guildID, cmds); err != nil {
+		if rErr := shard.RegisterCommandsOverwrite(guildID, cmds); rErr != nil {
 			err = errors.Join(err, rErr)
 		}
 	}
@@ -231,7 +234,7 @@ func (m *Manager) DeleteCommand(guildID, cmdID string) (err error) {
 	defer m.mu.RUnlock()
 
 	for _, shard := range m.shards {
-		if rErr := shard.DeleteCommand(guildID, cmdID); err != nil {
+		if rErr := shard.DeleteCommand(guildID, cmdID); rErr != nil {
 			err = errors.Join(err, rErr)
 		}
 	}
@@ -327,5 +330,5 @@ func (m *Manager) SessionForGuild(guildID int64) *discordgo.Session {
 	defer m.mu.RUnlock()
 
 	// See https://discord.com/developers/docs/topics/gateway#sharding
-	return m.shards[int(guildID>>22)%m.shardCount].Session
+	return m.shards[int(guildID>>22)%m.shardCount].Session //nolint:mnd,gomnd // Refer to the Discord API documentation.
 }

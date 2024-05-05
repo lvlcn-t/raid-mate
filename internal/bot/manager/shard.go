@@ -37,7 +37,7 @@ type shardInfo struct {
 
 // Connect connects the shard to Discord.
 // The shard must not already be connected. Otherwise this will return ErrAlreadyConnected.
-func (s *Shard) Connect(ctx context.Context, conn shardInfo) error {
+func (s *Shard) Connect(_ context.Context, conn shardInfo) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -70,7 +70,7 @@ func (s *Shard) Connect(ctx context.Context, conn shardInfo) error {
 
 // Disconnect disconnects the shard from Discord.
 // The shard must already be connected. Otherwise this will return ErrNotConnected.
-func (s *Shard) Disconnect(ctx context.Context) error {
+func (s *Shard) Disconnect(_ context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -91,7 +91,7 @@ func (s *Shard) AddHandlers(h ...EventHandler) {
 
 	if s.Session != nil {
 		for _, h := range h {
-			h.remover = s.Session.AddHandler(h.Handler)
+			h.remover = s.Session.AddHandler(h.Handler) //nolint:govet // False positive, h.remover is called in (*Shard).RemoveHandlers()
 		}
 	}
 

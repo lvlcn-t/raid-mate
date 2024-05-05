@@ -25,9 +25,9 @@ var registry = []func(services.Collection) any{
 }
 
 // Commands returns all the commands available.
-func (f *factory) Commands(services services.Collection) (cmds []any) {
+func (f *factory) Commands(svcs services.Collection) (cmds []any) {
 	for _, r := range registry {
-		cmds = append(cmds, r(services))
+		cmds = append(cmds, r(svcs))
 	}
 	return cmds
 }
@@ -40,10 +40,10 @@ type InteractionCommand interface {
 }
 
 // newInteractionCommands returns all the interaction commands.
-func newInteractionCommands(services services.Collection) any {
+func newInteractionCommands(svcs services.Collection) any {
 	return []InteractionCommand{
-		NewCredentials(services.Guild),
-		NewFeedback(services.GitHub),
+		NewCredentials(svcs.Guild),
+		NewFeedback(svcs.GitHub),
 		NewMove(),
 	}
 }

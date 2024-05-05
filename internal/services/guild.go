@@ -5,7 +5,7 @@ import (
 )
 
 type Guild interface {
-	GetCredentials(ctx context.Context, guildID string, account string) (Credentials, error)
+	GetCredentials(ctx context.Context, guildID, account string) (Credentials, error)
 	SetCredentials(ctx context.Context, guildID string, credentials Credentials) error
 }
 
@@ -21,12 +21,12 @@ type Credentials struct {
 	Password string
 }
 
-func (s *guild) GetCredentials(ctx context.Context, guildID string, url string) (Credentials, error) {
+func (s *guild) GetCredentials(_ context.Context, _, _ string) (Credentials, error) {
 	// TODO: do the grpc call to the guild service
 	return Credentials{}, nil
 }
 
-func (s *guild) SetCredentials(ctx context.Context, guildID string, credentials Credentials) error {
+func (s *guild) SetCredentials(_ context.Context, _ string, _ Credentials) error {
 	// TODO: do the grpc call to the guild service
 	return nil
 }
