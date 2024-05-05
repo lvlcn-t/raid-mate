@@ -41,7 +41,7 @@ type Command[T Event] interface {
 //	}
 //
 //	func NewMyCommand() *MyCommand {
-//		return &MyCommand{Base: NewBase("mycommand")}
+//		return &MyCommand{Base: NewBase[*discordgo.InteractionCreate]("mycommand")}
 //	}
 //
 //	func (c *MyCommand) Execute(s *discordgo.Session, e *discordgo.InteractionCreate) error {
