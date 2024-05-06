@@ -6,43 +6,15 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type Intent struct {
-	Name  string           `yaml:"Name"`
-	Value discordgo.Intent `yaml:"-"`
-}
-
-var (
-	IntentGuildMembers = Intent{
-		Name:  "Guild Members",
-		Value: discordgo.IntentGuildMembers,
-	}
-
-	IntentGuildPresences = Intent{
-		Name:  "Guild Presences",
-		Value: discordgo.IntentGuildPresences,
-	}
-
-	IntentMessageContent = Intent{
-		Name:  "Message Content",
-		Value: discordgo.IntentMessageContent,
-	}
-
-	// IntentsPrivileged is the list of intents that require privileged intents.
-	IntentsPrivileged = []Intent{IntentGuildMembers, IntentGuildPresences, IntentMessageContent}
-
-	// IntentsAll is the list of all intents.
-	IntentsAll = append(IntentsPrivileged, Intent{
-		Name:  "Unprivileged",
-		Value: discordgo.IntentsAllWithoutPrivileged,
-	})
-)
-
 // IntentsConfig defines how intents are configured.
 type IntentsConfig struct {
-	Unprivileged bool     `yaml:"unprivileged"`
-	Privileged   []string `yaml:"privileged"`
+	// Unprivileged is whether to use unprivileged intents.
+	Unprivileged bool `yaml:"unprivileged"`
+	// Privileged is the list of privileged intents.
+	Privileged []string `yaml:"privileged"`
 }
 
+// List returns the list of intents based on the configuration.
 func (c IntentsConfig) List() []discordgo.Intent {
 	var intents []discordgo.Intent
 	if c.Unprivileged {
@@ -60,3 +32,40 @@ func (c IntentsConfig) List() []discordgo.Intent {
 
 	return intents
 }
+
+// Intent defines a Discord intent.
+type Intent struct {
+	// Name is the name of the intent.
+	Name string `yaml:"-"`
+	// Value is the value of the intent.
+	Value discordgo.Intent `yaml:"-"`
+}
+
+var (
+	// IntentGuildMembers is the intent for guild members.
+	IntentGuildMembers = Intent{
+		Name:  "Guild Members",
+		Value: discordgo.IntentGuildMembers,
+	}
+
+	// IntentGuildPresences is the intent for guild presences.
+	IntentGuildPresences = Intent{
+		Name:  "Guild Presences",
+		Value: discordgo.IntentGuildPresences,
+	}
+
+	// IntentMessageContent is the intent for message content.
+	IntentMessageContent = Intent{
+		Name:  "Message Content",
+		Value: discordgo.IntentMessageContent,
+	}
+
+	// IntentsPrivileged is the list of intents that require privileged intents.
+	IntentsPrivileged = []Intent{IntentGuildMembers, IntentGuildPresences, IntentMessageContent}
+
+	// IntentsAll is the list of all intents.
+	IntentsAll = append(IntentsPrivileged, Intent{
+		Name:  "Unprivileged",
+		Value: discordgo.IntentsAllWithoutPrivileged,
+	})
+)

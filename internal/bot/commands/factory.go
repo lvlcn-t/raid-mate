@@ -41,10 +41,13 @@ type InteractionCommand interface {
 
 // newInteractionCommands returns all the interaction commands.
 func newInteractionCommands(svcs services.Collection) any {
-	return []InteractionCommand{
+	ic := []InteractionCommand{
 		NewCredentials(svcs.Guild),
 		NewFeedback(svcs.GitHub),
 		NewMove(),
 		NewLogs(svcs.Guild),
 	}
+
+	ic = append(ic, NewHelp(ic))
+	return ic
 }

@@ -145,8 +145,8 @@ func registerCommandsAndHandlers(svcs services.Collection, mgr *manager.Manager)
 // syncApplicationCommands syncs the application commands to all guilds.
 func syncApplicationCommands(icmds []commands.InteractionCommand, mgr *manager.Manager) (err error) {
 	infos := make([]*discordgo.ApplicationCommand, 0, len(icmds))
-	for i, icmd := range icmds {
-		infos[i] = icmd.Info()
+	for i := range icmds {
+		infos[i] = icmds[i].Info()
 	}
 
 	for _, guild := range mgr.ListGuilds() {
