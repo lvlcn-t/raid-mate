@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/lvlcn-t/loggerhead/logger"
 )
 
 var (
@@ -18,48 +19,63 @@ var (
 type Move struct {
 	// Base is the common base for all commands.
 	*Base[*discordgo.InteractionCreate]
+	// log is the logger.
+	log logger.Logger
 }
 
 // NewMove creates a new move command.
 func NewMove() *Move {
+	name := "move"
 	return &Move{
-		Base: NewBase[*discordgo.InteractionCreate]("move"),
+		Base: NewBase[*discordgo.InteractionCreate](name),
+		log:  logger.NewNamedLogger(name),
 	}
 }
 
 // Execute is the handler for the command that is called when the event is triggered.
-func (c *Move) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *Move) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	ctx := context.TODO()
+
 	choices := i.ApplicationCommandData().Options
 	if len(choices) != 2 {
-		return errors.New("invalid number of options")
+		err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: "invalid number of options",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if err != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		}
+		return
 	}
 
 	from := choices[0].ChannelValue(s)
 	to := choices[1].ChannelValue(s)
 
 	if err := c.validateRequest(from, to); err != nil {
-		return err
+		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: err.Error(),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if rErr != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "validationError", err)
+		}
+		return
 	}
 
 	for _, m := range from.Members {
 		err := s.GuildMemberMove(from.GuildID, m.ID, &to.ID)
 		if err != nil {
-			return err
+			c.log.ErrorContext(ctx, "Error moving member", "error", err)
 		}
 	}
 
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("Moved %d members from %q to %q", len(from.Members), from.Name, to.Name),
-			Flags:   discordgo.MessageFlagsEphemeral,
-		},
-	}, discordgo.WithContext(context.TODO()))
+	err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+		Content: fmt.Sprintf("Moved %d members from %q to %q", len(from.Members), from.Name, to.Name),
+		Flags:   discordgo.MessageFlagsEphemeral,
+	})
 	if err != nil {
-		return err
+		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
-
-	return nil
 }
 
 // Info returns the interaction command information.

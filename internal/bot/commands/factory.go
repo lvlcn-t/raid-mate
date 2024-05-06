@@ -45,5 +45,6 @@ func newInteractionCommands(svcs services.Collection) any {
 		NewCredentials(svcs.Guild),
 		NewFeedback(svcs.GitHub),
 		NewMove(),
+		NewLogs(svcs.Guild),
 	}
 }

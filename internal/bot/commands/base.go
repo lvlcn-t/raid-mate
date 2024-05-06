@@ -1,6 +1,10 @@
 package commands
 
 import (
+	"context"
+	"errors"
+	"reflect"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -27,7 +31,7 @@ type Command[T Event] interface {
 	// Name returns the name of the command.
 	Name() string
 	// Execute is the handler for the command that is called when the event is triggered.
-	Execute(s *discordgo.Session, e T) error
+	Execute(s *discordgo.Session, e T)
 }
 
 // Base is a common base for all commands.
@@ -58,7 +62,7 @@ func (c *Base[T]) Name() string {
 }
 
 // Execute is the handler for the command that is called when the event is triggered.
-func (c *Base[T]) Execute(_ *discordgo.Session, _ T) error {
+func (c *Base[T]) Execute(_ *discordgo.Session, _ T) {
 	panic("base command should not be executed")
 }
 
@@ -71,4 +75,16 @@ func NewBase[T Event](name string) *Base[T] {
 	}
 
 	return &Base[T]{name: name}
+}
+
+func (c *Base[T]) ReplyToInteraction(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, data *discordgo.InteractionResponseData) error {
+	var basetype T
+	if reflect.TypeOf(basetype) != reflect.TypeOf((*discordgo.Interaction)(nil)) {
+		return errors.New("invalid event type")
+	}
+
+	return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: data,
+	}, discordgo.WithContext(ctx))
 }

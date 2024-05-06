@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
@@ -21,47 +22,67 @@ type Feedback struct {
 	*Base[*discordgo.InteractionCreate]
 	// service is the GitHub service.
 	service services.GitHub
+	// log is the logger.
+	log logger.Logger
 }
 
 // NewFeedback creates a new feedback command.
 func NewFeedback(svc services.GitHub) *Feedback {
+	name := "feedback"
 	return &Feedback{
-		Base:    NewBase[*discordgo.InteractionCreate]("feedback"),
+		Base:    NewBase[*discordgo.InteractionCreate](name),
 		service: svc,
+		log:     logger.NewNamedLogger(name),
 	}
 }
 
 // Execute is the handler for the command that is called when the event is triggered.
-func (c *Feedback) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *Feedback) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	ctx := context.TODO()
 
 	choices := i.ApplicationCommandData().Options
 	if len(choices) != 1 {
-		return errors.New("invalid number of options")
+		err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: "invalid number of options",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if err != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		}
+		return
 	}
 
 	feedback := choices[0].StringValue()
 	if err := c.validateRequest(feedback); err != nil {
-		return err
+		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: err.Error(),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if rErr != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "validationError", err)
+		}
+		return
 	}
 
 	err := c.service.CreateIssue(ctx, feedback)
 	if err != nil {
-		return err
-	}
-
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("Feedback submitted: %q", feedback),
+		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: "failed to submit feedback",
 			Flags:   discordgo.MessageFlagsEphemeral,
-		},
-	}, discordgo.WithContext(ctx))
-	if err != nil {
-		return err
+		})
+		if rErr != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "createIssueError", err)
+		}
+		return
 	}
 
-	return nil
+	err = c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+		Content: fmt.Sprintf("Feedback submitted: %q", feedback),
+		Flags:   discordgo.MessageFlagsEphemeral,
+	})
+	if err != nil {
+		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+	}
 }
 
 // Info returns the interaction command information.

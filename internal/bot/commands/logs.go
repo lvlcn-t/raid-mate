@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
@@ -22,23 +23,34 @@ type Logs struct {
 	*Base[*discordgo.InteractionCreate]
 	// service is the guild service.
 	service services.Guild
+	// log is the logger.
+	log logger.Logger
 }
 
 // NewLogs creates a new logs command.
 func NewLogs(svc services.Guild) *Logs {
+	name := "logs"
 	return &Logs{
-		Base:    NewBase[*discordgo.InteractionCreate]("logs"),
+		Base:    NewBase[*discordgo.InteractionCreate](name),
 		service: svc,
+		log:     logger.NewNamedLogger(name),
 	}
 }
 
 // Execute is the handler for the command that is called when the event is triggered.
-func (c *Logs) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *Logs) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	ctx := context.TODO()
 
 	choices := i.ApplicationCommandData().Options
 	if len(choices) > 1 {
-		return errors.New("invalid number of options")
+		err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: "invalid number of options",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if err != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		}
+		return
 	}
 
 	date := time.Now().Format(time.DateOnly)
@@ -48,25 +60,34 @@ func (c *Logs) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) err
 
 	d, err := c.parseDate(date)
 	if err != nil {
-		return err
+		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: err.Error(),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if rErr != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "parseDateError", err)
+		}
+		return
 	}
 
 	logs, err := c.service.GetLogs(ctx, i.GuildID, d)
 	if err != nil {
-		return err
+		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: "error getting logs",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if rErr != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "getLogsError", err)
+		}
+		return
 	}
 
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: strings.Join(logs, "\n"),
-		},
-	}, discordgo.WithContext(ctx))
+	err = c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+		Content: strings.Join(logs, "\n"),
+	})
 	if err != nil {
-		return err
+		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
-
-	return nil
 }
 
 func (c *Logs) Info() *discordgo.ApplicationCommand {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
@@ -22,46 +23,67 @@ type Credentials struct {
 	*Base[*discordgo.InteractionCreate]
 	// service is the guild service.
 	service services.Guild
+	// log is the logger.
+	log logger.Logger
 }
 
 // NewCredentials creates a new credentials command.
 func NewCredentials(svc services.Guild) *Credentials {
+	name := "credentials"
 	return &Credentials{
-		Base:    NewBase[*discordgo.InteractionCreate]("credentials"),
+		Base:    NewBase[*discordgo.InteractionCreate](name),
 		service: svc,
+		log:     logger.NewNamedLogger(name),
 	}
 }
 
 // Execute is the handler for the command that is called when the event is triggered.
-func (c *Credentials) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) error {
+func (c *Credentials) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	ctx := context.TODO()
 
 	choices := i.ApplicationCommandData().Options
 	if len(choices) != 1 {
-		return errors.New("invalid number of options")
+		err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: "invalid number of options",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if err != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		}
+		return
 	}
 
 	account := choices[0].StringValue()
 	if err := c.validateRequest(account); err != nil {
-		return err
+		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: err.Error(),
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if rErr != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "validationError", err)
+		}
+		return
 	}
 
 	credentials, err := c.service.GetCredentials(ctx, i.GuildID, account)
 	if err != nil {
-		return err
+		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+			Content: "error getting credentials",
+			Flags:   discordgo.MessageFlagsEphemeral,
+		})
+		if rErr != nil {
+			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "getCredentialsError", err)
+		}
+		return
 	}
 
-	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("The login credentials for %q are:\n%s\n%s", account, credentials.Username, credentials.Password),
-		},
-	}, discordgo.WithContext(ctx))
+	err = c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
+		Content: fmt.Sprintf("The login credentials for %q are:\n%s\n%s", account, credentials.Username, credentials.Password),
+		Flags:   discordgo.MessageFlagsEphemeral,
+	})
 	if err != nil {
-		return err
+		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
-
-	return nil
 }
 
 // Info returns the interaction command information.
