@@ -2,11 +2,13 @@ package services
 
 import (
 	"context"
+	"time"
 )
 
 type Guild interface {
 	GetCredentials(ctx context.Context, guildID, account string) (Credentials, error)
 	SetCredentials(ctx context.Context, guildID string, credentials Credentials) error
+	GetLogs(ctx context.Context, guildID string, date time.Time) ([]string, error)
 }
 
 type guild struct{}
@@ -29,4 +31,9 @@ func (s *guild) GetCredentials(_ context.Context, _, _ string) (Credentials, err
 func (s *guild) SetCredentials(_ context.Context, _ string, _ Credentials) error {
 	// TODO: do the grpc call to the guild service
 	return nil
+}
+
+func (s *guild) GetLogs(_ context.Context, _ string, _ time.Time) ([]string, error) {
+	// TODO: do the grpc call to the guild service
+	return nil, nil
 }
