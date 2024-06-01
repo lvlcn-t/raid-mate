@@ -7,7 +7,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/services"
+	"github.com/lvlcn-t/raid-mate/internal/services/github"
 )
 
 var (
@@ -20,11 +20,11 @@ type Feedback struct {
 	// Base is the common base for all commands.
 	*Base[*events.ApplicationCommandInteractionCreate]
 	// service is the GitHub service.
-	service services.GitHub
+	service github.Service
 }
 
 // newFeedback creates a new feedback command.
-func newFeedback(svc services.GitHub) *Feedback {
+func newFeedback(svc github.Service) *Feedback {
 	name := "feedback"
 	return &Feedback{
 		Base:    NewBase(name),

@@ -9,7 +9,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/services"
+	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
 
 var (
@@ -22,11 +22,11 @@ type Logs struct {
 	// Base is the common base for all commands.
 	*Base[*events.ApplicationCommandInteractionCreate]
 	// service is the guild service.
-	service services.Guild
+	service guild.Service
 }
 
 // newLogs creates a new logs command.
-func newLogs(svc services.Guild) *Logs {
+func newLogs(svc guild.Service) *Logs {
 	return &Logs{
 		Base:    NewBase("logs"),
 		service: svc,
