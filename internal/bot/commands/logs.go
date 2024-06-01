@@ -18,29 +18,24 @@ var (
 )
 
 // Logs is a command to get the logs for a guild.
-// It is an interaction command.
 type Logs struct {
 	// Base is the common base for all commands.
 	*Base[*events.ApplicationCommandInteractionCreate]
 	// service is the guild service.
 	service services.Guild
-	// log is the logger.
-	log logger.Logger
 }
 
 // newLogs creates a new logs command.
 func newLogs(svc services.Guild) *Logs {
-	name := "logs"
-	cmd := &Logs{
+	return &Logs{
+		Base:    NewBase("logs"),
 		service: svc,
-		log:     logger.NewNamedLogger(name),
 	}
-	cmd.Base = NewBase(name, cmd.handle)
-	return cmd
 }
 
-// Execute is the handler for the command that is called when the event is triggered.
-func (c *Logs) handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+// Handle is the handler for the command that is called when the event is triggered.
+func (c *Logs) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
 	data := event.SlashCommandInteractionData()
 	date := data.String("date")
 	if date == "" {
@@ -55,7 +50,7 @@ func (c *Logs) handle(ctx context.Context, event *events.ApplicationCommandInter
 			Build(),
 		)
 		if cErr != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "parseDateError", err)
+			log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "parseDateError", err)
 		}
 		return
 	}
@@ -68,7 +63,7 @@ func (c *Logs) handle(ctx context.Context, event *events.ApplicationCommandInter
 			Build(),
 		)
 		if cErr != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "getLogsError", err)
+			log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "getLogsError", err)
 		}
 		return
 	}
@@ -78,7 +73,7 @@ func (c *Logs) handle(ctx context.Context, event *events.ApplicationCommandInter
 		Build(),
 	)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }
 

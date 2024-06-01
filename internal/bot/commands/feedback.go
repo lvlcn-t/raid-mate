@@ -16,29 +16,25 @@ var (
 )
 
 // Feedback is a command to submit feedback.
-// It is an interaction command.
 type Feedback struct {
 	// Base is the common base for all commands.
 	*Base[*events.ApplicationCommandInteractionCreate]
 	// service is the GitHub service.
 	service services.GitHub
-	// log is the logger.
-	log logger.Logger
 }
 
 // newFeedback creates a new feedback command.
 func newFeedback(svc services.GitHub) *Feedback {
 	name := "feedback"
-	cmd := &Feedback{
+	return &Feedback{
+		Base:    NewBase(name),
 		service: svc,
-		log:     logger.NewNamedLogger(name),
 	}
-	cmd.Base = NewBase(name, cmd.handle)
-	return cmd
 }
 
-// Execute is the handler for the command that is called when the event is triggered.
-func (c *Feedback) handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+// Handle is the handler for the command that is called when the event is triggered.
+func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
 	data := event.SlashCommandInteractionData()
 	feedback := data.String("feedback")
 
@@ -50,7 +46,7 @@ func (c *Feedback) handle(ctx context.Context, event *events.ApplicationCommandI
 			Build(),
 		)
 		if err != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+			log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 		}
 		return
 	}
@@ -63,7 +59,7 @@ func (c *Feedback) handle(ctx context.Context, event *events.ApplicationCommandI
 			Build(),
 		)
 		if cErr != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "createIssueError", err)
+			log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "createIssueError", err)
 		}
 		return
 	}
@@ -74,7 +70,7 @@ func (c *Feedback) handle(ctx context.Context, event *events.ApplicationCommandI
 		Build(),
 	)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }
 

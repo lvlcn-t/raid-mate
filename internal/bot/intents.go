@@ -17,6 +17,8 @@ func (c IntentsConfig) List() []gateway.Intents {
 	var intents []gateway.Intents
 	if c.Unprivileged {
 		intents = append(intents, gateway.IntentsNonPrivileged)
+	} else {
+		intents = append(intents, gateway.IntentsNone)
 	}
 
 	for _, i := range c.Privileged {
@@ -28,14 +30,19 @@ func (c IntentsConfig) List() []gateway.Intents {
 	return intents
 }
 
+// Intent is an intent for the bot.
 type Intent string
 
 const (
-	IntentGuilds         Intent = "guilds"
-	IntentGuildMessages  Intent = "guildMessages"
+	// IntentGuilds is the intent for guilds. This is a privileged intent.
+	IntentGuilds Intent = "guilds"
+	// IntentGuildMessages is the intent for guild messages. This is a privileged intent.
+	IntentGuildMessages Intent = "guildMessages"
+	// IntentDirectMessages is the intent for direct messages. This is a privileged intent.
 	IntentDirectMessages Intent = "directMessages"
 )
 
+// intentRegistry is the registry of privileged intents.
 var intentRegistry = map[Intent]gateway.Intents{
 	IntentGuilds:         gateway.IntentGuilds,
 	IntentGuildMessages:  gateway.IntentGuildMessages,

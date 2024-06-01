@@ -23,24 +23,19 @@ type Credentials struct {
 	*Base[*events.ApplicationCommandInteractionCreate]
 	// service is the guild service.
 	service services.Guild
-	// log is the logger.
-	log logger.Logger
 }
 
 // newCredentials creates a new credentials command.
 func newCredentials(svc services.Guild) *Credentials {
-	name := "credentials"
-	cmd := &Credentials{
+	return &Credentials{
+		Base:    NewBase("credentials"),
 		service: svc,
-		log:     logger.NewNamedLogger(name),
 	}
-
-	cmd.Base = NewBase(name, cmd.handle)
-	return cmd
 }
 
-// Execute is the handler for the command that is called when the event is triggered.
-func (c *Credentials) handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+// Handle is the handler for the command that is called when the event is triggered.
+func (c *Credentials) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
 	data := event.SlashCommandInteractionData()
 	account := data.String("account")
 
@@ -52,14 +47,14 @@ func (c *Credentials) handle(ctx context.Context, event *events.ApplicationComma
 			Build(),
 		)
 		if err != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+			log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 		}
 		return
 	}
 
 	err = event.DeferCreateMessage(true)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error deferring interaction", "error", err)
+		log.ErrorContext(ctx, "Error deferring interaction", "error", err)
 		return
 	}
 
@@ -71,7 +66,7 @@ func (c *Credentials) handle(ctx context.Context, event *events.ApplicationComma
 			Build(),
 		)
 		if cErr != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "getCredentialsError", err)
+			log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "getCredentialsError", err)
 		}
 		return
 	}
@@ -81,7 +76,7 @@ func (c *Credentials) handle(ctx context.Context, event *events.ApplicationComma
 		Build(),
 	)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }
 

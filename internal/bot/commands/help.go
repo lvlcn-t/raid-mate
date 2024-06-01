@@ -9,8 +9,8 @@ import (
 	"github.com/lvlcn-t/loggerhead/logger"
 )
 
-// green is the color green.
-const green = 0xf44336
+// red is the color red.
+const red = 0xf44336
 
 var (
 	_ Command[*events.ApplicationCommandInteractionCreate] = (*Help)(nil)
@@ -18,30 +18,26 @@ var (
 )
 
 // Help is a command to get help on how to use the bot.
-// It is an interaction command.
 type Help struct {
 	// Base is the common base for all commands.
 	*Base[*events.ApplicationCommandInteractionCreate]
-	// Commands is the list of commands to get help for.
-	Commands []InteractionCommand
-	// log is the logger.
-	log logger.Logger
+	// commands is the list of commands to get help for.
+	commands []InteractionCommand
 }
 
 // newHelp creates a new help command.
 func newHelp(cmds []InteractionCommand) *Help {
-	name := "help"
 	cmd := &Help{
-		Commands: cmds,
-		log:      logger.NewNamedLogger(name),
+		Base:     NewBase("help"),
+		commands: cmds,
 	}
-	cmd.Base = NewBase(name, cmd.handle)
-	cmd.Commands = append(cmd.Commands, cmd)
+	cmd.commands = append(cmd.commands, cmd)
 	return cmd
 }
 
-// Execute is the handler for the command that is called when the event is triggered.
-func (c *Help) handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+// Handle is the handler for the command that is called when the event is triggered.
+func (c *Help) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
 	data := event.SlashCommandInteractionData()
 	command := data.String("name")
 	if command == "" {
@@ -49,26 +45,26 @@ func (c *Help) handle(ctx context.Context, event *events.ApplicationCommandInter
 		return
 	}
 
-	cmd := c.lookupCommand(command)
+	cmd := c.lookup(command)
 	if cmd == nil {
 		c.sendDefaultHelp(ctx, event)
 		return
 	}
 
-	info := c.getCommandInfo(cmd)
+	info := c.getInfo(cmd)
 	err := event.CreateMessage(discord.NewMessageCreateBuilder().
 		AddEmbeds(info).
 		SetEphemeral(true).
 		Build(),
 	)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }
 
 func (c *Help) Info() InfoBuilder {
 	var choices []discord.ApplicationCommandOptionChoiceString
-	for _, command := range c.Commands {
+	for _, command := range c.commands {
 		choices = append(choices, NewStringOptionChoice(command.Name(), command.Name(), nil))
 	}
 
@@ -88,9 +84,9 @@ func (c *Help) Info() InfoBuilder {
 		)
 }
 
-// lookupCommand finds the interaction command with the given name.
-func (c *Help) lookupCommand(name string) InteractionCommand {
-	for _, command := range c.Commands {
+// lookup finds the interaction command with the given name.
+func (c *Help) lookup(name string) InteractionCommand {
+	for _, command := range c.commands {
 		if command.Name() == name {
 			return command
 		}
@@ -98,22 +94,23 @@ func (c *Help) lookupCommand(name string) InteractionCommand {
 	return nil
 }
 
-// getCommandInfo returns the information for the given command.
-func (c *Help) getCommandInfo(command InteractionCommand) discord.Embed {
+// getInfo returns the information for the given command.
+func (c *Help) getInfo(command InteractionCommand) discord.Embed {
 	info := command.Info().Build()
 
 	return discord.NewEmbedBuilder().
 		SetTitle(command.Name()).
 		SetDescription(info.Description).
-		SetColor(green).
+		SetColor(red).
 		Build()
 }
 
 // sendDefaultHelp sends the default help message.
 // After calling this you should return from the command handler.
 func (c *Help) sendDefaultHelp(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
 	var fields []discord.EmbedField
-	for _, cmd := range c.Commands {
+	for _, cmd := range c.commands {
 		fields = append(fields, discord.EmbedField{
 			Name:   fmt.Sprintf("Command: `/%s`", cmd.Name()),
 			Value:  cmd.Info().Build().Description,
@@ -124,7 +121,7 @@ func (c *Help) sendDefaultHelp(ctx context.Context, event *events.ApplicationCom
 	embed := discord.NewEmbedBuilder().
 		SetTitle("Help").
 		SetDescription("Here are the available commands:").
-		SetColor(green).
+		SetColor(red).
 		AddFields(fields...).
 		Build()
 
@@ -134,6 +131,6 @@ func (c *Help) sendDefaultHelp(ctx context.Context, event *events.ApplicationCom
 		Build(),
 	)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }
