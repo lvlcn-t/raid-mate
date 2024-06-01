@@ -1,5 +1,7 @@
 package services
 
+import "context"
+
 // Collection is the collection of services.
 type Collection struct {
 	GitHub GitHub
@@ -29,7 +31,7 @@ func (c *Collection) Connect() error {
 	return nil
 }
 
-func (c *Collection) Close() error {
+func (c *Collection) Close(_ context.Context) error {
 	// TODO: close all services
 	return nil
 }
