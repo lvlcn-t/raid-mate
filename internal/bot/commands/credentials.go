@@ -17,7 +17,6 @@ var (
 )
 
 // Credentials is a command to get the login credentials for an account.
-// It is an interaction command.
 type Credentials struct {
 	// Base is the common base for all commands.
 	*Base[*events.ApplicationCommandInteractionCreate]
@@ -72,7 +71,8 @@ func (c *Credentials) Handle(ctx context.Context, event *events.ApplicationComma
 	}
 
 	err = event.CreateMessage(discord.NewMessageCreateBuilder().
-		SetContentf("The login credentials for %q are:\n%s\n%s", account, credentials.Username, credentials.Password).
+		SetContentf("The login credentials for %q are:\nUsername: %s\nPassword: %s", account, credentials.Username, credentials.Password).
+		SetEphemeral(true).
 		Build(),
 	)
 	if err != nil {
@@ -106,7 +106,7 @@ func (c *Credentials) validateRequest(account string) error {
 		return errors.New("invalid account")
 	}
 
-	if strings.Contains(strings.ToLower(account), "raidbots") {
+	if !strings.EqualFold(account, "raidbots") {
 		return errors.New("unknown account")
 	}
 
