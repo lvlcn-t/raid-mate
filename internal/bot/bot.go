@@ -3,12 +3,15 @@ package bot
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo"
+	disbot "github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/sharding"
+	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/bot/commands"
-	"github.com/lvlcn-t/raid-mate/internal/bot/manager"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
@@ -36,8 +39,8 @@ type Config struct {
 type bot struct {
 	// cfg is the bot configuration.
 	cfg Config
-	// manager is the shard manager that holds all the shards.
-	manager *manager.Manager
+	// commands is the collection of commands.
+	commands commands.Collection
 	// services is the collection of services.
 	services services.Collection
 	// done is the channel to signal the bot is done.
@@ -51,25 +54,9 @@ func New(cfg Config) (Bot, error) {
 		return nil, err
 	}
 
-	sess, err := discordgo.New(fmt.Sprintf("Bot %s", cfg.Token))
-	if err != nil {
-		return nil, err
-	}
-
-	mgr, err := manager.New(sess)
-	if err != nil {
-		return nil, err
-	}
-	mgr.SetIntent(cfg.Intents.List()[0]) // TODO: set the intents properly
-
-	err = registerCommandsAndHandlers(svcs, mgr)
-	if err != nil {
-		return nil, err
-	}
-
 	return &bot{
 		cfg:      cfg,
-		manager:  mgr,
+		commands: commands.NewCollection(svcs),
 		services: svcs,
 		done:     make(chan struct{}, 1),
 	}, nil
@@ -77,13 +64,32 @@ func New(cfg Config) (Bot, error) {
 
 // Run starts the bot and blocks until it is stopped.
 func (b *bot) Run(ctx context.Context) error {
+	ctx, cancel := logger.NewContextWithLogger(ctx)
+	defer cancel()
+	log := logger.FromContext(ctx)
+
 	err := b.services.Connect()
 	if err != nil {
+		log.ErrorContext(ctx, "Failed to connect services", "error", err)
 		return err
 	}
 
-	err = b.manager.Start(ctx)
+	conn, err := b.newConnection(ctx)
 	if err != nil {
+		log.ErrorContext(ctx, "Failed to create connection", "error", err)
+		return err
+	}
+	defer conn.Close(ctx)
+
+	err = b.registerCommands(conn)
+	if err != nil {
+		log.ErrorContext(ctx, "Failed to register commands", "error", err)
+		return err
+	}
+
+	err = conn.OpenShardManager(ctx)
+	if err != nil {
+		log.ErrorContext(ctx, "Failed to open gateway", "error", err)
 		return err
 	}
 
@@ -107,8 +113,7 @@ func (b *bot) Shutdown(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
-	errs.mgrErr = b.manager.Shutdown(ctx)
-	errs.svcErr = b.services.Close()
+	errs.svcErr = b.services.Close(ctx)
 
 	if errs.HasErrors() {
 		return errs
@@ -119,41 +124,48 @@ func (b *bot) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// registerCommandsAndHandlers registers all commands and their respective handlers,
-// and ensures that all handlers are added.
-func registerCommandsAndHandlers(svcs services.Collection, mgr *manager.Manager) (err error) {
-	cmdFactory := commands.NewFactory()
-	allCommands := cmdFactory.Commands(svcs)
-
-	for _, cmd := range allCommands {
-		// Always add handlers for all commands
-		mgr.AddHandlers(manager.EventHandler{Handler: cmd})
-
-		icmds, ok := cmd.([]commands.InteractionCommand)
-		if !ok {
-			continue
-		}
-
-		if sErr := syncApplicationCommands(icmds, mgr); sErr != nil {
-			err = errors.Join(err, fmt.Errorf("failed to sync application commands: %w", sErr))
-		}
-	}
-
-	return err
+// newConnection creates a new Discord connection.
+func (b *bot) newConnection(ctx context.Context) (disbot.Client, error) {
+	log := logger.FromContext(ctx)
+	return disgo.New(b.cfg.Token,
+		disbot.WithShardManagerConfigOpts(
+			sharding.WithShardIDs(0, 1),
+			sharding.WithShardCount(2),
+			sharding.WithAutoScaling(true),
+			sharding.WithGatewayConfigOpts(
+				gateway.WithIntents(b.cfg.Intents.List()...),
+				gateway.WithCompress(true),
+			),
+		),
+		disbot.WithEventListeners(&events.ListenerAdapter{
+			OnGuildReady: func(event *events.GuildReady) {
+				log.InfoContext(ctx, "Guild ready", "guild", event.Guild.ID.String())
+			},
+			OnGuildsReady: func(event *events.GuildsReady) {
+				log.InfoContext(ctx, "Guilds on shard ready", "shard", event.ShardID())
+			},
+			OnApplicationCommandInteraction: func(event *events.ApplicationCommandInteractionCreate) {
+				cmd := b.commands.Get(event.Data.CommandName())
+				if cmd != nil {
+					cmd.Handle(ctx, event)
+				}
+			},
+		}),
+		disbot.WithLogger(log.ToSlog()),
+	)
 }
 
-// syncApplicationCommands syncs the application commands to all guilds.
-func syncApplicationCommands(icmds []commands.InteractionCommand, mgr *manager.Manager) (err error) {
-	infos := make([]*discordgo.ApplicationCommand, 0, len(icmds))
-	for i := range icmds {
-		infos[i] = icmds[i].Info()
-	}
-
-	for _, guild := range mgr.ListGuilds() {
-		if rErr := mgr.RegisterCommandsOverwrite(guild.ID, infos); rErr != nil {
-			err = errors.Join(err, fmt.Errorf("failed to register commands for guild %s: %w", guild.ID, rErr))
+// registerCommands registers the bot's commands with Discord.
+func (b *bot) registerCommands(conn disbot.Client) error {
+	infos := b.commands.Infos()
+	_, err := conn.Rest().SetGlobalCommands(conn.ApplicationID(), infos)
+	if err != nil {
+		for _, info := range infos {
+			_, cErr := conn.Rest().CreateGlobalCommand(conn.ApplicationID(), info)
+			if cErr != nil {
+				err = errors.Join(err, cErr)
+			}
 		}
 	}
-
 	return err
 }

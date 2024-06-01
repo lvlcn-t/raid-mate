@@ -1,9 +1,7 @@
 package bot
 
 import (
-	"strings"
-
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/gateway"
 )
 
 // IntentsConfig defines how intents are configured.
@@ -15,57 +13,38 @@ type IntentsConfig struct {
 }
 
 // List returns the list of intents based on the configuration.
-func (c IntentsConfig) List() []discordgo.Intent {
-	var intents []discordgo.Intent
+func (c IntentsConfig) List() []gateway.Intents {
+	var intents []gateway.Intents
 	if c.Unprivileged {
-		intents = append(intents, discordgo.IntentsAllWithoutPrivileged)
+		intents = append(intents, gateway.IntentsNonPrivileged)
+	} else {
+		intents = append(intents, gateway.IntentsNone)
 	}
 
-	for _, name := range c.Privileged {
-		for _, i := range IntentsAll {
-			if strings.EqualFold(i.Name, name) {
-				intents = append(intents, i.Value)
-				break
-			}
+	for _, i := range c.Privileged {
+		if intent, ok := intentRegistry[Intent(i)]; ok {
+			intents = append(intents, intent)
 		}
 	}
 
 	return intents
 }
 
-// Intent defines a Discord intent.
-type Intent struct {
-	// Name is the name of the intent.
-	Name string `yaml:"-"`
-	// Value is the value of the intent.
-	Value discordgo.Intent `yaml:"-"`
-}
+// Intent is an intent for the bot.
+type Intent string
 
-var (
-	// IntentGuildMembers is the intent for guild members.
-	IntentGuildMembers = Intent{
-		Name:  "Guild Members",
-		Value: discordgo.IntentGuildMembers,
-	}
-
-	// IntentGuildPresences is the intent for guild presences.
-	IntentGuildPresences = Intent{
-		Name:  "Guild Presences",
-		Value: discordgo.IntentGuildPresences,
-	}
-
-	// IntentMessageContent is the intent for message content.
-	IntentMessageContent = Intent{
-		Name:  "Message Content",
-		Value: discordgo.IntentMessageContent,
-	}
-
-	// IntentsPrivileged is the list of intents that require privileged intents.
-	IntentsPrivileged = []Intent{IntentGuildMembers, IntentGuildPresences, IntentMessageContent}
-
-	// IntentsAll is the list of all intents.
-	IntentsAll = append(IntentsPrivileged, Intent{
-		Name:  "Unprivileged",
-		Value: discordgo.IntentsAllWithoutPrivileged,
-	})
+const (
+	// IntentGuilds is the intent for guilds. This is a privileged intent.
+	IntentGuilds Intent = "guilds"
+	// IntentGuildMessages is the intent for guild messages. This is a privileged intent.
+	IntentGuildMessages Intent = "guildMessages"
+	// IntentDirectMessages is the intent for direct messages. This is a privileged intent.
+	IntentDirectMessages Intent = "directMessages"
 )
+
+// intentRegistry is the registry of privileged intents.
+var intentRegistry = map[Intent]gateway.Intents{
+	IntentGuilds:         gateway.IntentGuilds,
+	IntentGuildMessages:  gateway.IntentGuildMessages,
+	IntentDirectMessages: gateway.IntentDirectMessages,
+}

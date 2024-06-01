@@ -3,108 +3,92 @@ package commands
 import (
 	"context"
 	"errors"
-	"fmt"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/services"
+	"github.com/lvlcn-t/raid-mate/internal/services/github"
 )
 
 var (
-	_ Command[*discordgo.InteractionCreate] = (*Feedback)(nil)
-	_ InteractionCommand                    = (*Feedback)(nil)
+	_ Command[*events.ApplicationCommandInteractionCreate] = (*Feedback)(nil)
+	_ InteractionCommand                                   = (*Feedback)(nil)
 )
 
 // Feedback is a command to submit feedback.
-// It is an interaction command.
 type Feedback struct {
 	// Base is the common base for all commands.
-	*Base[*discordgo.InteractionCreate]
+	*Base[*events.ApplicationCommandInteractionCreate]
 	// service is the GitHub service.
-	service services.GitHub
-	// log is the logger.
-	log logger.Logger
+	service github.Service
 }
 
-// NewFeedback creates a new feedback command.
-func NewFeedback(svc services.GitHub) *Feedback {
+// newFeedback creates a new feedback command.
+func newFeedback(svc github.Service) *Feedback {
 	name := "feedback"
 	return &Feedback{
-		Base:    NewBase[*discordgo.InteractionCreate](name),
+		Base:    NewBase(name),
 		service: svc,
-		log:     logger.NewNamedLogger(name),
 	}
 }
 
-// Execute is the handler for the command that is called when the event is triggered.
-func (c *Feedback) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.TODO()
+// Handle is the handler for the command that is called when the event is triggered.
+func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
+	data := event.SlashCommandInteractionData()
+	feedback := data.String("feedback")
 
-	choices := i.ApplicationCommandData().Options
-	if len(choices) != 1 {
-		err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-			Content: "invalid number of options",
-			Flags:   discordgo.MessageFlagsEphemeral,
-		})
+	err := c.validateRequest(feedback)
+	if err != nil {
+		err = event.CreateMessage(discord.NewMessageCreateBuilder().
+			SetContent(err.Error()).
+			SetEphemeral(true).
+			Build(),
+		)
 		if err != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+			log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 		}
 		return
 	}
 
-	feedback := choices[0].StringValue()
-	if err := c.validateRequest(feedback); err != nil {
-		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-			Content: err.Error(),
-			Flags:   discordgo.MessageFlagsEphemeral,
-		})
-		if rErr != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "validationError", err)
-		}
-		return
-	}
-
-	err := c.service.CreateIssue(ctx, feedback)
+	err = c.service.CreateIssue(ctx, feedback)
 	if err != nil {
-		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-			Content: "failed to submit feedback",
-			Flags:   discordgo.MessageFlagsEphemeral,
-		})
-		if rErr != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "createIssueError", err)
+		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().
+			SetContent("Error while submitting feedback").
+			SetEphemeral(true).
+			Build(),
+		)
+		if cErr != nil {
+			log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "createIssueError", err)
 		}
 		return
 	}
 
-	err = c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-		Content: fmt.Sprintf("Feedback submitted: %q", feedback),
-		Flags:   discordgo.MessageFlagsEphemeral,
-	})
+	err = event.CreateMessage(discord.NewMessageCreateBuilder().
+		SetContentf("Feedback submitted: %q", feedback).
+		SetEphemeral(true).
+		Build(),
+	)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }
 
 // Info returns the interaction command information.
-func (c *Feedback) Info() *discordgo.ApplicationCommand {
-	return &discordgo.ApplicationCommand{
-		Name:        c.Name(),
-		Description: "Submit feedback",
-		DescriptionLocalizations: &map[discordgo.Locale]string{
-			discordgo.German: "Feedback einreichen",
-		},
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "feedback",
-				Description: "The feedback to submit",
-				DescriptionLocalizations: map[discordgo.Locale]string{
-					discordgo.German: "Das Feedback, das eingereicht werden soll",
-				},
-				Required: true,
-			},
-		},
-	}
+func (c *Feedback) Info() InfoBuilder {
+	return NewInfoBuilder().
+		Name(c.Name(), nil).
+		Description("Submit feedback", map[discord.Locale]string{
+			discord.LocaleGerman: "Feedback einreichen",
+		}).
+		Option(NewStringOptionBuilder().
+			Name("feedback", nil).
+			Description("The feedback to submit", map[discord.Locale]string{
+				discord.LocaleGerman: "Das Feedback, das eingereicht werden soll",
+			}).
+			Required(true).
+			Build(),
+		)
 }
 
 // validateRequest validates the feedback request.

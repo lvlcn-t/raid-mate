@@ -4,7 +4,7 @@ SHELL := /bin/bash
 .PHONY: dev
 dev:
 	@go build -tags=viper_bind_struct -o .tmp/bin/raid-mate ./cmd/app/main.go
-	@.tmp/bin/raid-mate
+	@.tmp/bin/raid-mate --config .tmp/config.yaml
 
 .PHONY: lint
 lint:

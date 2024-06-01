@@ -1,11 +1,11 @@
-package services
+package guild
 
 import (
 	"context"
 	"time"
 )
 
-type Guild interface {
+type Service interface {
 	GetCredentials(ctx context.Context, guildID, account string) (Credentials, error)
 	SetCredentials(ctx context.Context, guildID string, credentials Credentials) error
 	GetLogs(ctx context.Context, guildID string, date time.Time) ([]string, error)
@@ -13,7 +13,7 @@ type Guild interface {
 
 type guild struct{}
 
-func NewGuildService() (Guild, error) {
+func NewService() (*guild, error) {
 	return &guild{}, nil
 }
 

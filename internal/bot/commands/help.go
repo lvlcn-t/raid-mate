@@ -2,89 +2,91 @@ package commands
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
 	"github.com/lvlcn-t/loggerhead/logger"
 )
 
+// red is the color red.
+const red = 0xf44336
+
 var (
-	_ Command[*discordgo.InteractionCreate] = (*Help)(nil)
-	_ InteractionCommand                    = (*Help)(nil)
+	_ Command[*events.ApplicationCommandInteractionCreate] = (*Help)(nil)
+	_ InteractionCommand                                   = (*Help)(nil)
 )
 
 // Help is a command to get help on how to use the bot.
-// It is an interaction command.
 type Help struct {
 	// Base is the common base for all commands.
-	*Base[*discordgo.InteractionCreate]
-	// Commands is the list of commands to get help for.
-	Commands []InteractionCommand
-	// log is the logger.
-	log logger.Logger
+	*Base[*events.ApplicationCommandInteractionCreate]
+	// commands is the list of commands to get help for.
+	commands []InteractionCommand
 }
 
-// NewHelp creates a new help command.
-func NewHelp(cmds []InteractionCommand) *Help {
-	name := "help"
-	return &Help{
-		Base:     NewBase[*discordgo.InteractionCreate](name),
-		Commands: cmds,
-		log:      logger.NewNamedLogger(name),
+// newHelp creates a new help command.
+func newHelp(cmds []InteractionCommand) *Help {
+	cmd := &Help{
+		Base:     NewBase("help"),
+		commands: cmds,
 	}
+	cmd.commands = append(cmd.commands, cmd)
+	return cmd
 }
 
-// Execute is the handler for the command that is called when the event is triggered.
-func (c *Help) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.TODO()
-
-	choices := i.ApplicationCommandData().Options
-	if len(choices) == 0 {
-		c.sendDefaultHelp(ctx, s, i)
+// Handle is the handler for the command that is called when the event is triggered.
+func (c *Help) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
+	data := event.SlashCommandInteractionData()
+	command := data.String("name")
+	if command == "" {
+		c.sendDefaultHelp(ctx, event)
 		return
 	}
 
-	command := choices[0].StringValue()
-	cmd := c.lookupCommand(command)
+	cmd := c.lookup(command)
 	if cmd == nil {
-		c.sendDefaultHelp(ctx, s, i)
+		c.sendDefaultHelp(ctx, event)
 		return
 	}
 
-	info := c.getCommandInfo(cmd)
-	err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-		Embeds: []*discordgo.MessageEmbed{info},
-		Flags:  discordgo.MessageFlagsEphemeral,
-	})
+	info := c.getInfo(cmd)
+	err := event.CreateMessage(discord.NewMessageCreateBuilder().
+		AddEmbeds(info).
+		SetEphemeral(true).
+		Build(),
+	)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }
 
-// Info returns the interaction command information.
-func (c *Help) Info() *discordgo.ApplicationCommand {
-	return &discordgo.ApplicationCommand{
-		Name:        c.Name(),
-		Description: "Get help on how to use the bot.",
-		DescriptionLocalizations: &map[discordgo.Locale]string{
-			discordgo.German: "Erhalte Hilfe, wie du den Bot benutzen kannst.",
-		},
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Name:        "command",
-				Description: "The command to get help for.",
-				DescriptionLocalizations: map[discordgo.Locale]string{
-					discordgo.German: "Der Befehl, für den du Hilfe benötigst.",
-				},
-				Required: false,
-				Type:     discordgo.ApplicationCommandOptionString,
-			},
-		},
+func (c *Help) Info() InfoBuilder {
+	var choices []discord.ApplicationCommandOptionChoiceString
+	for _, command := range c.commands {
+		choices = append(choices, NewStringOptionChoice(command.Name(), command.Name(), nil))
 	}
+
+	return NewInfoBuilder().
+		Name(c.Name(), nil).
+		Description("Get help on how to use the bot.", map[discord.Locale]string{
+			discord.LocaleGerman: "Erhalte Hilfe, wie du den Bot benutzen kannst.",
+		}).
+		Option(NewStringOptionBuilder().
+			Name("name", nil).
+			Description("The name of the command to get help for.", map[discord.Locale]string{
+				discord.LocaleGerman: "Der Name des Befehls, für den du Hilfe benötigst.",
+			}).
+			Required(false).
+			Choices(choices...).
+			Build(),
+		)
 }
 
-// lookupCommand finds the interaction command with the given name.
-func (c *Help) lookupCommand(name string) InteractionCommand {
-	for _, command := range c.Commands {
+// lookup finds the interaction command with the given name.
+func (c *Help) lookup(name string) InteractionCommand {
+	for _, command := range c.commands {
 		if command.Name() == name {
 			return command
 		}
@@ -92,50 +94,43 @@ func (c *Help) lookupCommand(name string) InteractionCommand {
 	return nil
 }
 
-// getCommandInfo returns the information for the given command.
-func (c *Help) getCommandInfo(command InteractionCommand) *discordgo.MessageEmbed {
-	info := command.Info()
+// getInfo returns the information for the given command.
+func (c *Help) getInfo(command InteractionCommand) discord.Embed {
+	info := command.Info().Build()
 
-	embed := &discordgo.MessageEmbed{
-		Title:       info.Name,
-		Description: info.Description,
-		Color:       0x00ff00,
-		Fields:      []*discordgo.MessageEmbedField{},
-	}
-
-	for _, option := range info.Options {
-		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-			Name:   option.Name,
-			Value:  option.Description,
-			Inline: true,
-		})
-	}
-
-	return embed
+	return discord.NewEmbedBuilder().
+		SetTitle(command.Name()).
+		SetDescription(info.Description).
+		SetColor(red).
+		Build()
 }
 
 // sendDefaultHelp sends the default help message.
 // After calling this you should return from the command handler.
-func (c *Help) sendDefaultHelp(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	embed := &discordgo.MessageEmbed{
-		Title:       "Help",
-		Description: "Here are the available commands:",
-		Color:       0x00ff00,
-		Fields:      []*discordgo.MessageEmbedField{},
-	}
-
-	for _, command := range c.Commands {
-		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-			Name:   command.Name(),
-			Value:  command.Info().Description,
-			Inline: true,
+func (c *Help) sendDefaultHelp(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
+	var fields []discord.EmbedField
+	for _, cmd := range c.commands {
+		fields = append(fields, discord.EmbedField{
+			Name:   fmt.Sprintf("Command: `/%s`", cmd.Name()),
+			Value:  cmd.Info().Build().Description,
+			Inline: toPtr(false),
 		})
 	}
 
-	if err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-		Embeds: []*discordgo.MessageEmbed{embed},
-		Flags:  discordgo.MessageFlagsEphemeral,
-	}); err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+	embed := discord.NewEmbedBuilder().
+		SetTitle("Help").
+		SetDescription("Here are the available commands:").
+		SetColor(red).
+		AddFields(fields...).
+		Build()
+
+	err := event.CreateMessage(discord.NewMessageCreateBuilder().
+		AddEmbeds(embed).
+		SetEphemeral(true).
+		Build(),
+	)
+	if err != nil {
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }

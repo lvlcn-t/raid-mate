@@ -2,36 +2,23 @@ package commands
 
 import (
 	"context"
-	"errors"
-	"reflect"
+	"fmt"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/events"
 )
 
 // Event is an constaint interface for all Discord events.
 // This should only be used for type constraints.
 type Event interface {
-	*discordgo.MessageCreate | *discordgo.MessageUpdate | *discordgo.MessageDelete |
-		*discordgo.MessageReactionAdd | *discordgo.MessageReactionRemove | *discordgo.MessageReactionRemoveAll |
-		*discordgo.ChannelCreate | *discordgo.ChannelUpdate | *discordgo.ChannelDelete |
-		*discordgo.ChannelPinsUpdate | *discordgo.GuildCreate | *discordgo.GuildUpdate | *discordgo.GuildDelete |
-		*discordgo.GuildBanAdd | *discordgo.GuildBanRemove | *discordgo.GuildEmojisUpdate |
-		*discordgo.GuildIntegrationsUpdate | *discordgo.GuildMemberAdd | *discordgo.GuildMemberRemove |
-		*discordgo.GuildMemberUpdate | *discordgo.GuildMembersChunk | *discordgo.GuildRoleCreate |
-		*discordgo.GuildRoleUpdate | *discordgo.GuildRoleDelete | *discordgo.PresenceUpdate | *discordgo.TypingStart |
-		*discordgo.UserUpdate | *discordgo.VoiceStateUpdate | *discordgo.VoiceServerUpdate |
-		*discordgo.WebhooksUpdate | *discordgo.InteractionCreate
+	*events.ApplicationCommandInteractionCreate
 }
-
-// Handler is a function that handles a Discord event.
-type Handler[T Event] func(s *discordgo.Session, e T) error
 
 // Command is an interface for a command.
 type Command[T Event] interface {
 	// Name returns the name of the command.
 	Name() string
-	// Execute is the handler for the command that is called when the event is triggered.
-	Execute(s *discordgo.Session, e T)
+	// Handle is the handler for the command that is called when the event is triggered.
+	Handle(ctx context.Context, event T)
 }
 
 // Base is a common base for all commands.
@@ -41,15 +28,15 @@ type Command[T Event] interface {
 // Example:
 //
 //	type MyCommand struct {
-//		*Base[*discordgo.InteractionCreate]
+//	    *Base[*events.ApplicationCommandInteractionCreate]
 //	}
 //
 //	func NewMyCommand() *MyCommand {
-//		return &MyCommand{Base: NewBase[*discordgo.InteractionCreate]("mycommand")}
+//	    return &MyCommand{Base: NewBase("my-command")}
 //	}
 //
-//	func (c *MyCommand) Execute(s *discordgo.Session, e *discordgo.InteractionCreate) error {
-//		// do something
+//	func (c *MyCommand) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+//	    // handle the command
 //	}
 type Base[T Event] struct {
 	// name is the name of the command.
@@ -61,9 +48,10 @@ func (c *Base[T]) Name() string {
 	return c.name
 }
 
-// Execute is the handler for the command that is called when the event is triggered.
-func (c *Base[T]) Execute(_ *discordgo.Session, _ T) {
-	panic("base command should not be executed")
+// Handle is the handler for the command that is called when the event is triggered.
+// This is a default implementation that panics if not overridden.
+func (c *Base[T]) Handle(_ context.Context, _ T) {
+	panic(fmt.Sprintf("command %q does not have a handler", c.Name()))
 }
 
 // NewBase creates the common base for all commands.
@@ -77,14 +65,7 @@ func NewBase[T Event](name string) *Base[T] {
 	return &Base[T]{name: name}
 }
 
-func (c *Base[T]) ReplyToInteraction(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, data *discordgo.InteractionResponseData) error {
-	var basetype T
-	if reflect.TypeOf(basetype) != reflect.TypeOf((*discordgo.Interaction)(nil)) {
-		return errors.New("invalid event type")
-	}
-
-	return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: data,
-	}, discordgo.WithContext(ctx))
+// toPtr returns a pointer to the given value.
+func toPtr[T any](v T) *T {
+	return &v
 }

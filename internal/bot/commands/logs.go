@@ -6,124 +6,109 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/services"
+	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
 
 var (
-	_ Command[*discordgo.InteractionCreate] = (*Logs)(nil)
-	_ InteractionCommand                    = (*Logs)(nil)
+	_ Command[*events.ApplicationCommandInteractionCreate] = (*Logs)(nil)
+	_ InteractionCommand                                   = (*Logs)(nil)
 )
 
 // Logs is a command to get the logs for a guild.
-// It is an interaction command.
 type Logs struct {
 	// Base is the common base for all commands.
-	*Base[*discordgo.InteractionCreate]
+	*Base[*events.ApplicationCommandInteractionCreate]
 	// service is the guild service.
-	service services.Guild
-	// log is the logger.
-	log logger.Logger
+	service guild.Service
 }
 
-// NewLogs creates a new logs command.
-func NewLogs(svc services.Guild) *Logs {
-	name := "logs"
+// newLogs creates a new logs command.
+func newLogs(svc guild.Service) *Logs {
 	return &Logs{
-		Base:    NewBase[*discordgo.InteractionCreate](name),
+		Base:    NewBase("logs"),
 		service: svc,
-		log:     logger.NewNamedLogger(name),
 	}
 }
 
-// Execute is the handler for the command that is called when the event is triggered.
-func (c *Logs) Execute(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	ctx := context.TODO()
-
-	choices := i.ApplicationCommandData().Options
-	if len(choices) > 1 {
-		err := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-			Content: "invalid number of options",
-			Flags:   discordgo.MessageFlagsEphemeral,
-		})
-		if err != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
-		}
-		return
-	}
-
-	date := time.Now().Format(time.DateOnly)
-	if len(choices) == 1 {
-		date = choices[0].StringValue()
+// Handle is the handler for the command that is called when the event is triggered.
+func (c *Logs) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
+	log := logger.FromContext(ctx).With("command", c.Name())
+	data := event.SlashCommandInteractionData()
+	date := data.String("date")
+	if date == "" {
+		date = time.Now().Format(time.DateOnly)
 	}
 
 	d, err := c.parseDate(date)
 	if err != nil {
-		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-			Content: err.Error(),
-			Flags:   discordgo.MessageFlagsEphemeral,
-		})
-		if rErr != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "parseDateError", err)
+		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().
+			SetContent(err.Error()).
+			SetEphemeral(true).
+			Build(),
+		)
+		if cErr != nil {
+			log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "parseDateError", err)
 		}
 		return
 	}
 
-	logs, err := c.service.GetLogs(ctx, i.GuildID, d)
+	logs, err := c.service.GetLogs(ctx, event.GuildID().String(), d)
 	if err != nil {
-		rErr := c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-			Content: "error getting logs",
-			Flags:   discordgo.MessageFlagsEphemeral,
-		})
-		if rErr != nil {
-			c.log.ErrorContext(ctx, "Error replying to interaction", "error", rErr, "getLogsError", err)
+		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().
+			SetContent("Error while getting logs").
+			SetEphemeral(true).
+			Build(),
+		)
+		if cErr != nil {
+			log.ErrorContext(ctx, "Error replying to interaction", "error", cErr, "getLogsError", err)
 		}
 		return
 	}
 
-	err = c.ReplyToInteraction(ctx, s, i, &discordgo.InteractionResponseData{
-		Content: strings.Join(logs, "\n"),
-	})
+	err = event.CreateMessage(discord.NewMessageCreateBuilder().
+		SetContent(strings.Join(logs, "\n")).
+		Build(),
+	)
 	if err != nil {
-		c.log.ErrorContext(ctx, "Error replying to interaction", "error", err)
+		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
 }
 
-func (c *Logs) Info() *discordgo.ApplicationCommand {
-	return &discordgo.ApplicationCommand{
-		Name:        c.Name(),
-		Description: "Get the logs for the guild.",
-		DescriptionLocalizations: &map[discordgo.Locale]string{
-			discordgo.German: "Erhalte die Logs für die Gilde.",
-		},
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Name:        "date",
-				Description: "The date of the logs to get (YYYY-MM-DD or YYYY.MM.DD). If not provided, the current date is used.",
-				NameLocalizations: map[discordgo.Locale]string{
-					discordgo.German: "datum",
-				},
-				DescriptionLocalizations: map[discordgo.Locale]string{
-					discordgo.German: "Das Datum der zu erhaltenden Logs (JJJJ-MM-TT oder JJJJ.MM.TT). Wenn nicht angegeben, wird das aktuelle Datum verwendet.",
-				},
-				Type:     discordgo.ApplicationCommandOptionString,
-				Required: false,
-			},
-		},
-	}
+func (c *Logs) Info() InfoBuilder {
+	return NewInfoBuilder().
+		Name(c.Name(), nil).
+		Description("Fetch guild logs.", map[discord.Locale]string{
+			discord.LocaleGerman: "Hole Gilde-Logs.",
+		}).
+		Option(NewStringOptionBuilder().
+			Name("date", map[discord.Locale]string{
+				discord.LocaleGerman: "datum",
+			}).
+			Description("Date of logs (YYYY-MM-DD or YYYY.MM.DD). Defaults to today.", map[discord.Locale]string{
+				discord.LocaleGerman: "Datum der Logs (JJJJ-MM-TT oder JJJJ.MM.TT). Standard ist heute.",
+			}).
+			Required(false).
+			Build(),
+		)
 }
 
 func (c *Logs) parseDate(date string) (time.Time, error) {
-	d, err := time.Parse(time.DateOnly, date)
-	if err == nil {
-		return d, nil
+	layouts := []string{
+		time.DateOnly,
+		strings.ReplaceAll(time.DateOnly, "-", "."),
+		"02.01.2006",
+		"02-01-2006",
 	}
 
-	d, err = time.Parse(strings.ReplaceAll(time.DateOnly, "-", "."), date)
-	if err == nil {
-		return d, nil
+	for _, layout := range layouts {
+		d, err := time.Parse(layout, date)
+		if err == nil {
+			return d, nil
+		}
 	}
 
-	return time.Time{}, errors.New("invalid date format")
+	return time.Time{}, errors.New("Invalid date format")
 }
