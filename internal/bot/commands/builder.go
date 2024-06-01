@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"unicode/utf8"
 
 	"github.com/disgoorg/disgo/discord"
 )
@@ -29,12 +30,12 @@ func NewInfoBuilder() InfoBuilder {
 // Provide nil for localizations if the name should not be localized.
 func (i InfoBuilder) Name(name string, localizations map[discord.Locale]string) InfoBuilder { //nolint:gocritic // builder pattern
 	if len(name) > maxNameLength {
-		panic(fmt.Sprintf("name is too long: %d > 32", len(name)))
+		panic(fmt.Sprintf("name is too long: %d > %d", len(name), maxNameLength))
 	}
 
 	for locale, n := range localizations {
-		if len(n) > maxNameLength {
-			panic(fmt.Sprintf("name for locale %q is too long: %d > 32", locale, len(n)))
+		if utf8.RuneCountInString(n) > maxNameLength {
+			panic(fmt.Sprintf("name for locale %q is too long: %d > %d", locale, utf8.RuneCountInString(n), maxNameLength))
 		}
 	}
 
@@ -49,12 +50,12 @@ func (i InfoBuilder) Name(name string, localizations map[discord.Locale]string) 
 // Provide nil for localizations if the description should not be localized.
 func (i InfoBuilder) Description(description string, localizations map[discord.Locale]string) InfoBuilder { //nolint:gocritic // builder pattern
 	if len(description) > maxDescriptionLength {
-		panic(fmt.Sprintf("description is too long: %d > 100", len(description)))
+		panic(fmt.Sprintf("description is too long: %d > %d", len(description), maxDescriptionLength))
 	}
 
 	for locale, desc := range localizations {
-		if len(desc) > maxDescriptionLength {
-			panic(fmt.Sprintf("description for locale %q is too long: %d > 100", locale, len(desc)))
+		if utf8.RuneCountInString(desc) > maxDescriptionLength {
+			panic(fmt.Sprintf("description for locale %q is too long: %d > %d", locale, utf8.RuneCountInString(desc), maxDescriptionLength))
 		}
 	}
 
@@ -96,12 +97,12 @@ func NewStringOptionBuilder() StringOptionBuilder {
 // Provide nil for localizations if the name should not be localized.
 func (so StringOptionBuilder) Name(name string, localization map[discord.Locale]string) StringOptionBuilder { //nolint:gocritic // builder pattern
 	if len(name) > maxNameLength {
-		panic(fmt.Sprintf("name is too long: %d > 32", len(name)))
+		panic(fmt.Sprintf("name is too long: %d > %d", len(name), maxNameLength))
 	}
 
 	for locale, n := range localization {
-		if len(n) > maxNameLength {
-			panic(fmt.Sprintf("name for locale %q is too long: %d > 32", locale, len(n)))
+		if utf8.RuneCountInString(n) > maxNameLength {
+			panic(fmt.Sprintf("name for locale %q is too long: %d > %d", locale, utf8.RuneCountInString(n), maxNameLength))
 		}
 	}
 
@@ -115,12 +116,12 @@ func (so StringOptionBuilder) Name(name string, localization map[discord.Locale]
 // Provide nil for localizations if the description should not be localized.
 func (so StringOptionBuilder) Description(description string, localization map[discord.Locale]string) StringOptionBuilder { //nolint:gocritic // builder pattern
 	if len(description) > maxDescriptionLength {
-		panic(fmt.Sprintf("description is too long: %d > 100", len(description)))
+		panic(fmt.Sprintf("description is too long: %d > %d", len(description), maxDescriptionLength))
 	}
 
 	for locale, desc := range localization {
-		if len(desc) > maxDescriptionLength {
-			panic(fmt.Sprintf("description for locale %q is too long: %d > 100", locale, len(desc)))
+		if utf8.RuneCountInString(desc) > maxDescriptionLength {
+			panic(fmt.Sprintf("description for locale %q is too long: %d > %d", locale, utf8.RuneCountInString(desc), maxDescriptionLength))
 		}
 	}
 
@@ -152,16 +153,16 @@ func (so StringOptionBuilder) Build() discord.ApplicationCommandOption { //nolin
 // Provide nil for localizedNames if the name should not be localized.
 func NewStringOptionChoice(name, value string, localizedNames map[discord.Locale]string) discord.ApplicationCommandOptionChoiceString {
 	if len(name) > maxNameLength {
-		panic(fmt.Sprintf("name is too long: %d > 32", len(name)))
+		panic(fmt.Sprintf("name is too long: %d > %d", len(name), maxNameLength))
 	}
 
 	if len(value) > maxNameLength {
-		panic(fmt.Sprintf("value is too long: %d > 32", len(value)))
+		panic(fmt.Sprintf("value is too long: %d > %d", len(value), maxNameLength))
 	}
 
 	for locale, n := range localizedNames {
-		if len(n) > maxNameLength {
-			panic(fmt.Sprintf("name for locale %q is too long: %d > 32", locale, len(n)))
+		if utf8.RuneCountInString(n) > maxNameLength {
+			panic(fmt.Sprintf("name for locale %q is too long: %d > %d", locale, utf8.RuneCountInString(n), maxNameLength))
 		}
 	}
 
