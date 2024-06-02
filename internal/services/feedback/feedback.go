@@ -67,17 +67,20 @@ func (s *feedback) Submit(ctx context.Context, req Request, client bot.Client) e
 		return nil
 	}
 
-	for i, svc := range s.selected {
+	var unrecognized []string
+	for _, svc := range s.selected {
 		if fsvc, ok := s.registry[svc]; ok {
 			if err := fsvc.Submit(ctx, req, client); err != nil {
 				return err
 			}
+			continue
 		}
-
-		if i == len(s.selected)-1 {
-			return nil
-		}
+		unrecognized = append(unrecognized, svc)
 	}
 
-	return &ErrUnrecognizedServices{s.selected}
+	if len(unrecognized) > 0 {
+		return &ErrUnrecognizedServices{services: unrecognized}
+	}
+
+	return nil
 }

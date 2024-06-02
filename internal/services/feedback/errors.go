@@ -9,7 +9,7 @@ type ErrUnrecognizedServices struct {
 
 // Error returns the error message.
 func (e *ErrUnrecognizedServices) Error() string {
-	return fmt.Sprintf("no service was recognized: %v", e.services)
+	return fmt.Sprintf("the following services are unrecognized: %v", e.services)
 }
 
 // Is checks if the target is an ErrUnknownService.
