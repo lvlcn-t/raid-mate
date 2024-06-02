@@ -19,7 +19,7 @@ type Config struct {
 
 // IsEmpty returns whether the configuration is empty.
 // It implements the config.Settings interface.
-func (c Config) IsEmpty() bool {
+func (c Config) IsEmpty() bool { //nolint:gocritic // The viper cannot handle pointer receivers
 	return reflect.DeepEqual(c, Config{})
 }
 
