@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/disgoorg/disgo"
@@ -47,6 +48,8 @@ type bot struct {
 	conn disbot.Client
 	// done is the channel to signal the bot is done.
 	done chan struct{}
+	// once is the sync.Once to ensure the bot is only shutdown once.
+	once sync.Once
 }
 
 // New creates a new bot instance.
@@ -57,6 +60,7 @@ func New(cfg Config, svcs services.Collection) (Bot, error) {
 		services: svcs,
 		conn:     nil,
 		done:     make(chan struct{}, 1),
+		once:     sync.Once{},
 	}, nil
 }
 
@@ -72,7 +76,7 @@ func (b *bot) Run(ctx context.Context) error {
 		return err
 	}
 
-	b.conn, err = b.newConnection(ctx)
+	err = b.newConnection(ctx)
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to create connection", "error", err)
 		return err
@@ -103,29 +107,35 @@ func (b *bot) Run(ctx context.Context) error {
 
 // Shutdown stops the bot and all its components.
 func (b *bot) Shutdown(ctx context.Context) error {
-	defer close(b.done)
-	errs := &ErrShutdown{
-		ctxErr: ctx.Err(),
-	}
+	var errs *ErrShutdown
 
-	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
-	defer cancel()
+	b.once.Do(func() {
+		defer close(b.done)
+		errs = &ErrShutdown{
+			ctxErr: ctx.Err(),
+		}
 
-	errs.svcErr = b.services.Close(ctx)
+		c, cancel := context.WithTimeout(ctx, shutdownTimeout)
+		defer cancel()
 
-	if errs.HasErrors() {
+		errs.svcErr = b.services.Close(c)
+		if !errs.HasErrors() {
+			// Send the done signal to shutdown the bot if the shutdown wasn't caused by an error.
+			b.done <- struct{}{}
+		}
+	})
+
+	if errs != nil && errs.HasErrors() {
 		return errs
 	}
 
-	// Send the done signal to shutdown the bot if the shutdown wasn't caused by an error.
-	b.done <- struct{}{}
 	return nil
 }
 
 // newConnection creates a new Discord connection.
-func (b *bot) newConnection(ctx context.Context) (disbot.Client, error) {
+func (b *bot) newConnection(ctx context.Context) (err error) {
 	log := logger.FromContext(ctx)
-	return disgo.New(b.cfg.Token,
+	b.conn, err = disgo.New(b.cfg.Token,
 		disbot.WithShardManagerConfigOpts(
 			sharding.WithShardIDs(0, 1),
 			sharding.WithShardCount(2),
@@ -151,6 +161,7 @@ func (b *bot) newConnection(ctx context.Context) (disbot.Client, error) {
 		}),
 		disbot.WithLogger(log.ToSlog()),
 	)
+	return
 }
 
 // registerCommands registers the bot's commands with Discord.

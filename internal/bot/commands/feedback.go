@@ -60,7 +60,7 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 		Feedback: fb,
 		Server:   guild.Name,
 		User:     event.User().Username,
-	})
+	}, event.Client())
 	if err != nil {
 		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().
 			SetContent("Error while submitting feedback").

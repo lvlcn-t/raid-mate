@@ -3,12 +3,14 @@ package feedback
 import (
 	"context"
 	"strings"
+
+	"github.com/disgoorg/disgo/bot"
 )
 
 // Service is the interface for the service.
 type Service interface {
 	// Submit submits the feedback.
-	Submit(ctx context.Context, req Request) error
+	Submit(ctx context.Context, req Request, client bot.Client) error
 }
 
 // Request is the request for the feedback.
@@ -51,19 +53,19 @@ func NewService(c *Config) (Service, error) {
 }
 
 // Submit submits the feedback.
-func (s *feedback) Submit(ctx context.Context, req Request) error {
+func (s *feedback) Submit(ctx context.Context, req Request, client bot.Client) error {
 	if s.selected == "" {
 		return nil
 	}
 
 	if strings.EqualFold(s.selected, "all") {
 		for _, svc := range s.registry {
-			return svc.Submit(ctx, req)
+			return svc.Submit(ctx, req, client)
 		}
 	}
 
 	if svc, ok := s.registry[s.selected]; ok {
-		return svc.Submit(ctx, req)
+		return svc.Submit(ctx, req, client)
 	}
 
 	return &ErrUnknownService{s.selected}

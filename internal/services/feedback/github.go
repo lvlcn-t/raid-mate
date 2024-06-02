@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/disgoorg/disgo/bot"
 	gh "github.com/google/go-github/v62/github"
 	"github.com/lvlcn-t/loggerhead/logger"
 )
@@ -29,7 +30,7 @@ func newGitHub(c *githubConfig) *github {
 	}
 }
 
-func (s *github) Submit(ctx context.Context, req Request) error {
+func (s *github) Submit(ctx context.Context, req Request, _ bot.Client) error {
 	log := logger.FromContext(ctx)
 	r := &reqIssue{
 		Title:  fmt.Sprintf("Feedback from %s", req.User),
