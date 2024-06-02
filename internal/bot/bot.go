@@ -8,6 +8,7 @@ import (
 
 	"github.com/disgoorg/disgo"
 	disbot "github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/sharding"
@@ -143,6 +144,10 @@ func (b *bot) newConnection(ctx context.Context) (err error) {
 			sharding.WithGatewayConfigOpts(
 				gateway.WithIntents(b.cfg.Intents.List()...),
 				gateway.WithCompress(true),
+				gateway.WithPresenceOpts(
+					gateway.WithOnlineStatus(discord.OnlineStatusOnline),
+					gateway.WithWatchingActivity("you"),
+				),
 			),
 		),
 		disbot.WithEventListeners(&events.ListenerAdapter{
@@ -161,7 +166,7 @@ func (b *bot) newConnection(ctx context.Context) (err error) {
 		}),
 		disbot.WithLogger(log.ToSlog()),
 	)
-	return
+	return err
 }
 
 // registerCommands registers the bot's commands with Discord.
