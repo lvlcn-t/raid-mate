@@ -13,6 +13,24 @@ import (
 
 type Server interface {
 	// Run runs the server.
+	// Runs indefinitely until an error occurs or the server is shut down.
+	//
+	// If no routes were mounted before, it will mount a health check route.
+	//
+	// Example setup:
+	//
+	//	srv := api.NewServer(&Config{Address: ":8080"})
+	//	err := srv.Mount(RouteGroup{
+	//		Path: "/v1",
+	//		App: fiber.New().Get("/hello", func(c fiber.Ctx) error {
+	//			return c.SendString("Hello, World!")
+	//		}),
+	//	})
+	//	if err != nil {
+	//		// handle error
+	//	}
+	//
+	//	_ = srv.Run(context.Background())
 	Run(ctx context.Context) error
 	// Mount adds the provided route groups to the server.
 	// If the server is not initialized, it will add a health check route.
@@ -42,6 +60,7 @@ type server struct {
 	mu          sync.Mutex
 }
 
+// NewServer creates a new server with the provided configuration.
 func NewServer(c *Config) Server {
 	app := fiber.New()
 	return &server{
@@ -52,6 +71,8 @@ func NewServer(c *Config) Server {
 	}
 }
 
+// Run runs the server.
+// Runs indefinitely until an error occurs or the server is shut down.
 func (s *server) Run(ctx context.Context) error {
 	_ = s.router.Use(middleware.Context(ctx))
 	if !s.initialized {
@@ -64,6 +85,8 @@ func (s *server) Run(ctx context.Context) error {
 	return s.app.Listen(s.config.Address)
 }
 
+// Mount adds the provided route groups to the server.
+// If the server is not initialized, it will add a health check route.
 func (s *server) Mount(routes ...RouteGroup) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
