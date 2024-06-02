@@ -48,12 +48,7 @@ type bot struct {
 }
 
 // New creates a new bot instance.
-func New(cfg Config) (Bot, error) {
-	svcs, err := services.NewCollection()
-	if err != nil {
-		return nil, err
-	}
-
+func New(cfg Config, svcs services.Collection) (Bot, error) {
 	return &bot{
 		cfg:      cfg,
 		commands: commands.NewCollection(svcs),

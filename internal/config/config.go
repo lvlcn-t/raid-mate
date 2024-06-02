@@ -6,12 +6,15 @@ import (
 
 	"github.com/lvlcn-t/go-kit/config"
 	"github.com/lvlcn-t/raid-mate/internal/bot"
+	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
 // Config is the configuration for the application.
 type Config struct {
 	// Bot is the configuration for the bot.
 	Bot bot.Config `yaml:"bot" mapstructure:"bot"`
+	// Services is the configuration for the services.
+	Services services.Config `yaml:"services" mapstructure:"services"`
 }
 
 // IsEmpty returns whether the configuration is empty.

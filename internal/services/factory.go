@@ -3,19 +3,27 @@ package services
 import (
 	"context"
 
-	"github.com/lvlcn-t/raid-mate/internal/services/github"
+	"github.com/lvlcn-t/raid-mate/internal/services/feedback"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
 
 // Collection is the collection of services.
 type Collection struct {
-	GitHub github.Service
+	GitHub feedback.Service
 	Guild  guild.Service
 }
 
+// Config is the configuration for the services.
+type Config struct {
+	// Feedback is the configuration for the feedback service.
+	Feedback feedback.Config `yaml:"feedback" mapstructure:"feedback"`
+	// Guild is the configuration for the guild service.
+	// Guild guild.Config `yaml:"guild" mapstructure:"guild"`
+}
+
 // NewCollection creates a new collection of services.
-func NewCollection() (Collection, error) {
-	gh, err := github.NewService()
+func NewCollection(c *Config) (Collection, error) {
+	gh, err := feedback.NewService(&c.Feedback)
 	if err != nil {
 		return Collection{}, err
 	}

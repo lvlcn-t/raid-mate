@@ -10,6 +10,7 @@ import (
 	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/bot"
 	"github.com/lvlcn-t/raid-mate/internal/config"
+	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
 // version is set on build time
@@ -38,7 +39,12 @@ func main() {
 	defer close(sigChan)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	b, err := bot.New(cfg.Bot)
+	svcs, err := services.NewCollection(&cfg.Services)
+	if err != nil {
+		log.FatalContext(ctx, "Failed to create services", "error", err)
+	}
+
+	b, err := bot.New(cfg.Bot, svcs)
 	if err != nil {
 		log.FatalContext(ctx, "Failed to create bot", "error", err)
 	}

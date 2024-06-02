@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/disgoorg/disgo v0.18.6
+	github.com/google/go-github/v62 v62.0.0
 	github.com/lvlcn-t/go-kit/config v0.2.0
 	github.com/lvlcn-t/loggerhead v0.3.1
 )
@@ -16,6 +17,7 @@ require (
 	github.com/disgoorg/snowflake/v2 v2.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect

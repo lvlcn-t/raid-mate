@@ -7,7 +7,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/services/github"
+	"github.com/lvlcn-t/raid-mate/internal/services/feedback"
 )
 
 var (
@@ -20,11 +20,11 @@ type Feedback struct {
 	// Base is the common base for all commands.
 	*Base[*events.ApplicationCommandInteractionCreate]
 	// service is the GitHub service.
-	service github.Service
+	service feedback.Service
 }
 
 // newFeedback creates a new feedback command.
-func newFeedback(svc github.Service) *Feedback {
+func newFeedback(svc feedback.Service) *Feedback {
 	name := "feedback"
 	return &Feedback{
 		Base:    NewBase(name),
@@ -51,7 +51,7 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 		return
 	}
 
-	err = c.service.CreateIssue(ctx, feedback)
+	err = c.service.Submit(ctx, feedback)
 	if err != nil {
 		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().
 			SetContent("Error while submitting feedback").
