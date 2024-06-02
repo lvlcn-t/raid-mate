@@ -59,7 +59,8 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 	err = c.service.Submit(ctx, feedback.Request{
 		Feedback: fb,
 		Server:   guild.Name,
-		User:     event.User().Username,
+		Username: event.User().Username,
+		UserID:   event.User().ID,
 	}, event.Client())
 	if err != nil {
 		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().

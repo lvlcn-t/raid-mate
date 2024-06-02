@@ -21,8 +21,13 @@ type dm struct {
 }
 
 func newDM(c *dmConfig) *dm {
+	id, err := snowflake.Parse(c.ID)
+	if err != nil {
+		id = snowflake.MustParse("null")
+	}
+
 	return &dm{
-		id: snowflake.MustParse(c.ID),
+		id: id,
 	}
 }
 
@@ -33,8 +38,12 @@ func (s *dm) Submit(ctx context.Context, req Request, client bot.Client) error {
 		log.ErrorContext(ctx, "Error while creating DM channel", "error", err)
 		return err
 	}
+
+	am := discord.DefaultAllowedMentions
+	am.Users = append(am.Users, req.UserID)
 	m, err := client.Rest().CreateMessage(dm.ID(), discord.NewMessageCreateBuilder().
-		SetContentf("Feedback from %s in %s\n\n%s", req.User, req.Server, req.Feedback).
+		SetAllowedMentions(&am).
+		SetContentf("Feedback from <@%s> in %s\n\n%s", req.Username, req.Server, req.Feedback).
 		SetEphemeral(false).
 		Build())
 	if err != nil {

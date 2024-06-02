@@ -9,8 +9,8 @@ import (
 
 // Collection is the collection of services.
 type Collection struct {
-	GitHub feedback.Service
-	Guild  guild.Service
+	Feedback feedback.Service
+	Guild    guild.Service
 }
 
 // Config is the configuration for the services.
@@ -23,7 +23,7 @@ type Config struct {
 
 // NewCollection creates a new collection of services.
 func NewCollection(c *Config) (Collection, error) {
-	gh, err := feedback.NewService(&c.Feedback)
+	fb, err := feedback.NewService(&c.Feedback)
 	if err != nil {
 		return Collection{}, err
 	}
@@ -34,8 +34,8 @@ func NewCollection(c *Config) (Collection, error) {
 	}
 
 	return Collection{
-		GitHub: gh,
-		Guild:  g,
+		Feedback: fb,
+		Guild:    g,
 	}, nil
 }
 

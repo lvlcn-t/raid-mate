@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 // Service is the interface for the service.
@@ -15,9 +16,10 @@ type Service interface {
 
 // Request is the request for the feedback.
 type Request struct {
-	Feedback string `json:"feedback"`
-	Server   string `json:"server"`
-	User     string `json:"user"`
+	Feedback string       `json:"feedback"`
+	Server   string       `json:"server"`
+	Username string       `json:"username"`
+	UserID   snowflake.ID `json:"user_id"`
 }
 
 // feedback is the service for the feedback.

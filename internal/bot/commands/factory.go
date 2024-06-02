@@ -23,7 +23,7 @@ func NewCollection(svcs services.Collection) Collection {
 	c := Collection{
 		logs:        newLogs(svcs.Guild),
 		credentials: newCredentials(svcs.Guild),
-		feedback:    newFeedback(svcs.GitHub),
+		feedback:    newFeedback(svcs.Feedback),
 	}
 	c.help = newHelp(c.InteractionCommands())
 	return c

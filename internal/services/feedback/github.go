@@ -36,8 +36,8 @@ func newGitHub(c *githubConfig) *github {
 func (s *github) Submit(ctx context.Context, req Request, _ bot.Client) error {
 	log := logger.FromContext(ctx)
 	r := &reqIssue{
-		Title:  fmt.Sprintf("Feedback from %s", req.User),
-		Body:   fmt.Sprintf("Feedback from %s in %s\n\n%s", req.User, req.Server, req.Feedback),
+		Title:  fmt.Sprintf("Feedback from %s", req.Username),
+		Body:   fmt.Sprintf("Feedback from %s in %s\n\n%s", req.Username, req.Server, req.Feedback),
 		Labels: []string{"feedback"},
 	}
 
