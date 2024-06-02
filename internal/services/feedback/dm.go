@@ -18,6 +18,6 @@ func newDM(c *dmConfig) *dm {
 	}
 }
 
-func (s *dm) Submit(_ context.Context, _ string) error {
+func (s *dm) Submit(_ context.Context, _ Request) error {
 	return nil
 }

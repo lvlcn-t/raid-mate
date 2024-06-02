@@ -36,9 +36,9 @@ func newFeedback(svc feedback.Service) *Feedback {
 func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandInteractionCreate) {
 	log := logger.FromContext(ctx).With("command", c.Name())
 	data := event.SlashCommandInteractionData()
-	feedback := data.String("feedback")
+	fb := data.String("feedback")
 
-	err := c.validateRequest(feedback)
+	err := c.validateRequest(fb)
 	if err != nil {
 		err = event.CreateMessage(discord.NewMessageCreateBuilder().
 			SetContent(err.Error()).
@@ -51,7 +51,16 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 		return
 	}
 
-	err = c.service.Submit(ctx, feedback)
+	guild, ok := event.Guild()
+	if !ok {
+		guild.Name = "DM"
+	}
+
+	err = c.service.Submit(ctx, feedback.Request{
+		Feedback: fb,
+		Server:   guild.Name,
+		User:     event.User().Username,
+	})
 	if err != nil {
 		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().
 			SetContent("Error while submitting feedback").
@@ -65,7 +74,7 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 	}
 
 	err = event.CreateMessage(discord.NewMessageCreateBuilder().
-		SetContentf("Feedback submitted: %q", feedback).
+		SetContentf("Feedback submitted: %q", fb).
 		SetEphemeral(true).
 		Build(),
 	)
@@ -92,8 +101,8 @@ func (c *Feedback) Info() InfoBuilder {
 }
 
 // validateRequest validates the feedback request.
-func (c *Feedback) validateRequest(feedback string) error {
-	if feedback == "" {
+func (c *Feedback) validateRequest(fb string) error {
+	if fb == "" {
 		return errors.New("invalid feedback")
 	}
 

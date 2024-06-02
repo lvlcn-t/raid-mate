@@ -2,6 +2,7 @@ package feedback
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -28,15 +29,15 @@ func newGitHub(c *githubConfig) *github {
 	}
 }
 
-func (s *github) Submit(ctx context.Context, feedback string) error {
+func (s *github) Submit(ctx context.Context, req Request) error {
 	log := logger.FromContext(ctx)
-	req := &reqIssue{
-		Title:  "Feedback",
-		Body:   feedback,
+	r := &reqIssue{
+		Title:  fmt.Sprintf("Feedback from %s", req.User),
+		Body:   fmt.Sprintf("Feedback from %s in %s\n\n%s", req.User, req.Server, req.Feedback),
 		Labels: []string{"feedback"},
 	}
 
-	resp, err := s.createIssue(ctx, req)
+	resp, err := s.createIssue(ctx, r)
 	if err != nil {
 		log.ErrorContext(ctx, "Error while creating issue", "error", err)
 		return err
@@ -102,6 +103,10 @@ func (g *ghClient) GetRepository(ctx context.Context, owner, repo string) (*gh.R
 }
 
 func (g *ghClient) CreateIssue(ctx context.Context, repo *gh.Repository, issue *gh.IssueRequest) (*gh.Issue, error) {
+	if repo.Owner == nil {
+		return nil, errors.New("repository owner is nil")
+	}
+
 	i, resp, err := g.Client.Issues.Create(ctx, repo.Owner.GetLogin(), repo.GetName(), issue)
 	if err != nil {
 		if resp.StatusCode >= http.StatusBadRequest {
