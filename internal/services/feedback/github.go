@@ -17,6 +17,8 @@ type githubConfig struct {
 	Owner string `yaml:"owner" mapstructure:"owner"`
 	// Repo is the repository name.
 	Repo string `yaml:"repo" mapstructure:"repo"`
+	// Token is the GitHub token to authenticate.
+	Token string `yaml:"token" mapstructure:"token"`
 }
 
 type github struct {
@@ -27,6 +29,7 @@ type github struct {
 func newGitHub(c *githubConfig) *github {
 	return &github{
 		config: c,
+		client: newGitHubClient(c.Token),
 	}
 }
 
@@ -86,7 +89,7 @@ type githubAPI interface {
 
 type ghClient struct{ *gh.Client }
 
-func NewGitHub(token string) *ghClient {
+func newGitHubClient(token string) *ghClient {
 	return &ghClient{
 		Client: gh.NewClient(nil).WithAuthToken(token),
 	}

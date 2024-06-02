@@ -2,7 +2,7 @@ package feedback
 
 import (
 	"context"
-	"strings"
+	"slices"
 
 	"github.com/disgoorg/disgo/bot"
 )
@@ -24,7 +24,7 @@ type Request struct {
 // It is a composite service that can use multiple services.
 type feedback struct {
 	// selected is the selected feedback service.
-	selected string
+	selected []string
 	// registry is the registry of the services.
 	registry map[string]Service
 }
@@ -34,7 +34,7 @@ type Config struct {
 	// Service is the service to use.
 	// It can be "github", "dm", or "all".
 	// If it is not set, no service will be used.
-	Service string `yaml:"service" mapstructure:"service"`
+	Service []string `yaml:"service" mapstructure:"service"`
 	// GitHub is the configuration for the GitHub service.
 	GitHub githubConfig `yaml:"github" mapstructure:"github"`
 	// DM is the configuration for the DM service.
@@ -54,19 +54,21 @@ func NewService(c *Config) (Service, error) {
 
 // Submit submits the feedback.
 func (s *feedback) Submit(ctx context.Context, req Request, client bot.Client) error {
-	if s.selected == "" {
+	if len(s.selected) == 0 {
 		return nil
 	}
 
-	if strings.EqualFold(s.selected, "all") {
+	if slices.Contains(s.selected, "all") {
 		for _, svc := range s.registry {
 			return svc.Submit(ctx, req, client)
 		}
 	}
 
-	if svc, ok := s.registry[s.selected]; ok {
-		return svc.Submit(ctx, req, client)
+	for _, svc := range s.selected {
+		if fsvc, ok := s.registry[svc]; ok {
+			return fsvc.Submit(ctx, req, client)
+		}
 	}
 
-	return &ErrUnknownService{s.selected}
+	return &ErrUnrecognizedServices{s.selected}
 }
