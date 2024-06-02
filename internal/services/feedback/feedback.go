@@ -60,13 +60,22 @@ func (s *feedback) Submit(ctx context.Context, req Request, client bot.Client) e
 
 	if slices.Contains(s.selected, "all") {
 		for _, svc := range s.registry {
-			return svc.Submit(ctx, req, client)
+			if err := svc.Submit(ctx, req, client); err != nil {
+				return err
+			}
 		}
+		return nil
 	}
 
-	for _, svc := range s.selected {
+	for i, svc := range s.selected {
 		if fsvc, ok := s.registry[svc]; ok {
-			return fsvc.Submit(ctx, req, client)
+			if err := fsvc.Submit(ctx, req, client); err != nil {
+				return err
+			}
+		}
+
+		if i == len(s.selected)-1 {
+			return nil
 		}
 	}
 
