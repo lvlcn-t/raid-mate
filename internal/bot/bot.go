@@ -43,6 +43,8 @@ type bot struct {
 	commands commands.Collection
 	// services is the collection of services.
 	services services.Collection
+	// conn is the Discord connection.
+	conn disbot.Client
 	// done is the channel to signal the bot is done.
 	done chan struct{}
 }
@@ -53,6 +55,7 @@ func New(cfg Config, svcs services.Collection) (Bot, error) {
 		cfg:      cfg,
 		commands: commands.NewCollection(svcs),
 		services: svcs,
+		conn:     nil,
 		done:     make(chan struct{}, 1),
 	}, nil
 }
@@ -69,20 +72,20 @@ func (b *bot) Run(ctx context.Context) error {
 		return err
 	}
 
-	conn, err := b.newConnection(ctx)
+	b.conn, err = b.newConnection(ctx)
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to create connection", "error", err)
 		return err
 	}
-	defer conn.Close(ctx)
+	defer b.conn.Close(ctx)
 
-	err = b.registerCommands(conn)
+	err = b.registerCommands()
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to register commands", "error", err)
 		return err
 	}
 
-	err = conn.OpenShardManager(ctx)
+	err = b.conn.OpenShardManager(ctx)
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to open gateway", "error", err)
 		return err
@@ -151,12 +154,12 @@ func (b *bot) newConnection(ctx context.Context) (disbot.Client, error) {
 }
 
 // registerCommands registers the bot's commands with Discord.
-func (b *bot) registerCommands(conn disbot.Client) error {
+func (b *bot) registerCommands() error {
 	infos := b.commands.Infos()
-	_, err := conn.Rest().SetGlobalCommands(conn.ApplicationID(), infos)
+	_, err := b.conn.Rest().SetGlobalCommands(b.conn.ApplicationID(), infos)
 	if err != nil {
 		for _, info := range infos {
-			_, cErr := conn.Rest().CreateGlobalCommand(conn.ApplicationID(), info)
+			_, cErr := b.conn.Rest().CreateGlobalCommand(b.conn.ApplicationID(), info)
 			if cErr != nil {
 				err = errors.Join(err, cErr)
 			}

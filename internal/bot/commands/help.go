@@ -62,7 +62,7 @@ func (c *Help) Handle(ctx context.Context, event *events.ApplicationCommandInter
 	}
 }
 
-func (c *Help) Info() InfoBuilder {
+func (c *Help) Info() discord.ApplicationCommandCreate {
 	var choices []discord.ApplicationCommandOptionChoiceString
 	for _, command := range c.commands {
 		choices = append(choices, NewStringOptionChoice(command.Name(), command.Name(), nil))
@@ -81,7 +81,7 @@ func (c *Help) Info() InfoBuilder {
 			Required(false).
 			Choices(choices...).
 			Build(),
-		)
+		).Build()
 }
 
 // lookup finds the interaction command with the given name.
@@ -96,8 +96,7 @@ func (c *Help) lookup(name string) InteractionCommand {
 
 // getInfo returns the information for the given command.
 func (c *Help) getInfo(command InteractionCommand) discord.Embed {
-	info := command.Info().Build()
-
+	info := command.Info().(discord.SlashCommandCreate)
 	return discord.NewEmbedBuilder().
 		SetTitle(command.Name()).
 		SetDescription(info.Description).
@@ -113,7 +112,7 @@ func (c *Help) sendDefaultHelp(ctx context.Context, event *events.ApplicationCom
 	for _, cmd := range c.commands {
 		fields = append(fields, discord.EmbedField{
 			Name:   fmt.Sprintf("Command: `/%s`", cmd.Name()),
-			Value:  cmd.Info().Build().Description,
+			Value:  cmd.Info().(discord.SlashCommandCreate).Description,
 			Inline: toPtr(false),
 		})
 	}

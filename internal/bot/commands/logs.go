@@ -77,7 +77,7 @@ func (c *Logs) Handle(ctx context.Context, event *events.ApplicationCommandInter
 	}
 }
 
-func (c *Logs) Info() InfoBuilder {
+func (c *Logs) Info() discord.ApplicationCommandCreate {
 	return NewInfoBuilder().
 		Name(c.Name(), nil).
 		Description("Fetch guild logs.", map[discord.Locale]string{
@@ -92,7 +92,7 @@ func (c *Logs) Info() InfoBuilder {
 			}).
 			Required(false).
 			Build(),
-		)
+		).Build()
 }
 
 func (c *Logs) parseDate(date string) (time.Time, error) {

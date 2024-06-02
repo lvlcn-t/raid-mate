@@ -84,7 +84,7 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 }
 
 // Info returns the interaction command information.
-func (c *Feedback) Info() InfoBuilder {
+func (c *Feedback) Info() discord.ApplicationCommandCreate {
 	return NewInfoBuilder().
 		Name(c.Name(), nil).
 		Description("Submit feedback", map[discord.Locale]string{
@@ -97,7 +97,7 @@ func (c *Feedback) Info() InfoBuilder {
 			}).
 			Required(true).
 			Build(),
-		)
+		).Build()
 }
 
 // validateRequest validates the feedback request.

@@ -81,7 +81,7 @@ func (c *Credentials) Handle(ctx context.Context, event *events.ApplicationComma
 }
 
 // Info returns the interaction command information.
-func (c *Credentials) Info() InfoBuilder {
+func (c *Credentials) Info() discord.ApplicationCommandCreate {
 	return NewInfoBuilder().
 		Name(c.Name(), map[discord.Locale]string{
 			discord.LocaleGerman: "logindaten",
@@ -97,7 +97,7 @@ func (c *Credentials) Info() InfoBuilder {
 			Required(true).
 			Choices(NewStringOptionChoice("raidbots", "raidbots", nil)).
 			Build(),
-		)
+		).Build()
 }
 
 // validateRequest validates the credentials request.

@@ -61,7 +61,7 @@ func (c *Collection) InteractionCommands() []InteractionCommand {
 func (c *Collection) Infos() []discord.ApplicationCommandCreate {
 	infos := make([]discord.ApplicationCommandCreate, len(c.InteractionCommands()))
 	for i, cmd := range c.InteractionCommands() {
-		infos[i] = cmd.Info().Build()
+		infos[i] = cmd.Info()
 	}
 	return infos
 }
@@ -70,5 +70,5 @@ func (c *Collection) Infos() []discord.ApplicationCommandCreate {
 type InteractionCommand interface {
 	Command[*events.ApplicationCommandInteractionCreate]
 	// Info returns the interaction command information.
-	Info() InfoBuilder
+	Info() discord.ApplicationCommandCreate
 }
