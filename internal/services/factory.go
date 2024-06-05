@@ -18,7 +18,7 @@ type Config struct {
 	// Feedback is the configuration for the feedback service.
 	Feedback feedback.Config `yaml:"feedback" mapstructure:"feedback"`
 	// Guild is the configuration for the guild service.
-	// Guild guild.Config `yaml:"guild" mapstructure:"guild"`
+	Guild guild.Config `yaml:"guild" mapstructure:"guild"`
 }
 
 // NewCollection creates a new collection of services.
@@ -28,7 +28,7 @@ func NewCollection(c *Config) (Collection, error) {
 		return Collection{}, err
 	}
 
-	g, err := guild.NewService()
+	g, err := guild.NewService(&c.Guild)
 	if err != nil {
 		return Collection{}, err
 	}

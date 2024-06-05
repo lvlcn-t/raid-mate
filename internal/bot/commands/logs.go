@@ -55,7 +55,7 @@ func (c *Logs) Handle(ctx context.Context, event *events.ApplicationCommandInter
 		return
 	}
 
-	logs, err := c.service.GetLogs(ctx, event.GuildID().String(), d)
+	logs, err := c.service.GetReport(ctx, event.GuildID().String(), d)
 	if err != nil {
 		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().
 			SetContent("Error while getting logs").
