@@ -9,16 +9,25 @@ import (
 )
 
 type Service interface {
-	Create(ctx context.Context, guildID string, guild Request) error
+	Create(ctx context.Context, guildID string, guild *Guild) error
 	GetCredentials(ctx context.Context, guildID, account string) (Credentials, error)
 	SetCredentials(ctx context.Context, guildID string, credentials Credentials) error
-	GetReport(ctx context.Context, guildID string, date time.Time) ([]string, error)
+	GetReports(ctx context.Context, guildID string, date time.Time) ([]string, error)
+	GetProfile(ctx context.Context, profile *RequestProfile) (*Profiles, error)
 }
 
-type Request struct {
+type Guild struct {
 	Name         string
 	ServerName   string
 	ServerRegion string
+	ServerRealm  string
+}
+
+type RequestProfile struct {
+	Type    string
+	GuildID string
+	User    string
+	guild   Guild
 }
 
 type guild struct {
@@ -50,9 +59,9 @@ type Credentials struct {
 	Password string
 }
 
-func (s *guild) Create(_ context.Context, guildID string, guild Request) error {
+func (s *guild) Create(_ context.Context, guildID string, guild *Guild) error {
 	// TODO: implement this with the postgreSQL database
-	s.database.Store(guildID, guild)
+	s.database.Store(guildID, *guild)
 	return nil
 }
 
@@ -72,21 +81,30 @@ func (s *guild) SetCredentials(_ context.Context, guildID string, credentials Cr
 	return nil
 }
 
-func (s *guild) GetReport(ctx context.Context, guildID string, date time.Time) ([]string, error) {
+func (s *guild) GetReports(ctx context.Context, guildID string, date time.Time) ([]string, error) {
 	guild, ok := s.database.Load(guildID) // TODO: implement this with the postgreSQL database
 	if !ok {
 		return nil, errors.New("not found")
 	}
 
-	reports, err := s.client.FetchReport(ctx, guild.(Request), date)
+	reports, err := s.client.FetchReports(ctx, guild.(Guild), date)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching reports: %w", err)
 	}
 
 	var reportUrls []string
 	for _, r := range reports {
-		reportUrls = append(reportUrls, fmt.Sprintf("%s/reports/%s", baseURL, r.Id))
+		reportUrls = append(reportUrls, fmt.Sprintf("%s/reports/%s", logsBaseURL, r.Id))
 	}
 
 	return reportUrls, nil
+}
+
+func (s *guild) GetProfile(ctx context.Context, req *RequestProfile) (*Profiles, error) {
+	guild, ok := s.database.Load(req.GuildID) // TODO: implement this with the postgreSQL database
+	if !ok {
+		return nil, errors.New("not found")
+	}
+	req.guild = guild.(Guild)
+	return s.client.FetchProfile(ctx, req)
 }
