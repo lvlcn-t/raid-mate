@@ -95,12 +95,9 @@ func (s *server) Mount(routes ...RouteGroup) (err error) {
 	}
 
 	if !s.initialized {
-		routes = append(routes, RouteGroup{
-			Path: "/",
-			App: fiber.New().Get("/healthz", func(c fiber.Ctx) error {
-				logger.FromContext(c.UserContext()).DebugContext(c.Context(), "healthz")
-				return c.Status(http.StatusOK).JSON(fiber.Map{"status": "ok"})
-			}),
+		_ = s.app.Get("/healthz", func(c fiber.Ctx) error {
+			logger.FromContext(c.UserContext()).DebugContext(c.Context(), "healthz")
+			return c.Status(http.StatusOK).JSON(fiber.Map{"status": "ok"})
 		})
 		s.initialized = true
 	}
