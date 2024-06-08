@@ -76,7 +76,7 @@ func (c *Profile) Info() discord.ApplicationCommandCreate {
 		Name(c.Name(), map[discord.Locale]string{
 			discord.LocaleGerman: "profil",
 		}).
-		Description("Gets the profile of the given choosen option.", map[discord.Locale]string{
+		Description("Gets the profile of the given chosen option.", map[discord.Locale]string{
 			discord.LocaleGerman: "Gibt das Profil der gewählten Option zurück.",
 		}).
 		Option(NewStringOptionBuilder().

@@ -14,6 +14,8 @@ type Collection struct {
 	credentials *Credentials
 	// feedback is the feedback command.
 	feedback *Feedback
+	// profile is the profile command.
+	profile *Profile
 	// help is the help command.
 	help *Help
 }
@@ -24,6 +26,7 @@ func NewCollection(svcs services.Collection) Collection {
 		logs:        newLogs(svcs.Guild),
 		credentials: newCredentials(svcs.Guild),
 		feedback:    newFeedback(svcs.Feedback),
+		profile:     newProfile(svcs.Guild),
 	}
 	c.help = newHelp(c.InteractionCommands())
 	return c
@@ -38,6 +41,8 @@ func (c *Collection) Get(name string) InteractionCommand {
 		return c.credentials
 	case c.feedback.Name():
 		return c.feedback
+	case c.profile.Name():
+		return c.profile
 	case c.help.Name():
 		return c.help
 	default:
@@ -51,6 +56,7 @@ func (c *Collection) InteractionCommands() []InteractionCommand {
 		c.logs,
 		c.credentials,
 		c.feedback,
+		c.profile,
 	}
 	if c.help != nil {
 		ic = append(ic, c.help)
