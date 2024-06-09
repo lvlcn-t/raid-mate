@@ -3,6 +3,7 @@ package commands
 import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/gofiber/fiber/v3"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
@@ -70,6 +71,15 @@ func (c *Collection) Infos() []discord.ApplicationCommandCreate {
 		infos[i] = cmd.Info()
 	}
 	return infos
+}
+
+func (c *Collection) Router() *fiber.App {
+	// app := fiber.New() //nolint:gocritic // TODO: implement this
+	// for _, cmd := range c.InteractionCommands() {
+	// 	app.Post(cmd.Name(), cmd.HandleHTTP)
+	// }
+	// return app
+	return fiber.New()
 }
 
 // InteractionCommand is a command that is triggered by an interaction.

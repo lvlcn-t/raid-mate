@@ -13,6 +13,7 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/sharding"
 	"github.com/lvlcn-t/loggerhead/logger"
+	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/bot/commands"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
@@ -41,6 +42,8 @@ type Config struct {
 type bot struct {
 	// cfg is the bot configuration.
 	cfg Config
+	// api is the API server.
+	api api.Server
 	// commands is the collection of commands.
 	commands commands.Collection
 	// services is the collection of services.
@@ -55,14 +58,27 @@ type bot struct {
 
 // New creates a new bot instance.
 func New(cfg Config, svcs services.Collection) (Bot, error) {
-	return &bot{
-		cfg:      cfg,
+	b := &bot{
+		cfg: cfg,
+		api: api.NewServer(&api.Config{ // TODO: move api server to dedicated layer to avoid circular dependency
+			Address: ":8080",
+		}),
 		commands: commands.NewCollection(svcs),
 		services: svcs,
 		conn:     nil,
 		done:     make(chan struct{}, 1),
 		once:     sync.Once{},
-	}, nil
+	}
+
+	err := b.api.Mount(api.RouteGroup{
+		Path: "/v1",
+		App:  b.commands.Router(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
 
 // Run starts the bot and blocks until it is stopped.
