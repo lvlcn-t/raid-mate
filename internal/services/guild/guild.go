@@ -9,7 +9,11 @@ import (
 )
 
 type Service interface {
+	List(ctx context.Context) ([]Guild, error)
+	Get(ctx context.Context, guildID string) (*Guild, error)
 	Create(ctx context.Context, guildID string, guild *Guild) error
+	Update(ctx context.Context, guildID string, guild *Guild) error
+	Delete(ctx context.Context, guildID string) error
 	GetCredentials(ctx context.Context, guildID, account string) (Credentials, error)
 	SetCredentials(ctx context.Context, guildID string, credentials Credentials) error
 	GetReports(ctx context.Context, guildID string, date time.Time) ([]string, error)
@@ -59,9 +63,40 @@ type Credentials struct {
 	Password string
 }
 
+func (s *guild) List(_ context.Context) ([]Guild, error) {
+	var guilds []Guild
+	s.database.Range(func(_, value any) bool {
+		guilds = append(guilds, value.(Guild))
+		return true
+	})
+	return guilds, nil
+}
+
+func (s *guild) Get(_ context.Context, guildID string) (*Guild, error) {
+	guild, ok := s.database.Load(guildID) // TODO: implement this with the postgreSQL database
+	if !ok {
+		return nil, errors.New("not found")
+	}
+	g := guild.(Guild)
+	return &g, nil
+}
+
 func (s *guild) Create(_ context.Context, guildID string, guild *Guild) error {
 	// TODO: implement this with the postgreSQL database
 	s.database.Store(guildID, *guild)
+	return nil
+}
+
+func (s *guild) Update(_ context.Context, guildID string, guild *Guild) error {
+	_, ok := s.database.Swap(guildID, *guild) // TODO: implement this with the postgreSQL database
+	if !ok {
+		return errors.New("not found")
+	}
+	return nil
+}
+
+func (s *guild) Delete(_ context.Context, guildID string) error {
+	s.database.Delete(guildID) // TODO: implement this with the postgreSQL database
 	return nil
 }
 
@@ -101,10 +136,13 @@ func (s *guild) GetReports(ctx context.Context, guildID string, date time.Time) 
 }
 
 func (s *guild) GetProfile(ctx context.Context, req *RequestProfile) (*Profiles, error) {
-	guild, ok := s.database.Load(req.GuildID) // TODO: implement this with the postgreSQL database
-	if !ok {
-		return nil, errors.New("not found")
+	if req.Type == "guild" {
+		guild, ok := s.database.Load(req.GuildID) // TODO: implement this with the postgreSQL database
+		if !ok {
+			return nil, errors.New("not found")
+		}
+		req.guild = guild.(Guild)
 	}
-	req.guild = guild.(Guild)
+
 	return s.client.FetchProfile(ctx, req)
 }

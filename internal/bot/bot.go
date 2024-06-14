@@ -11,6 +11,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/disgo/sharding"
 	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/api"
@@ -169,6 +170,11 @@ func (b *bot) newConnection(ctx context.Context) (err error) {
 		disbot.WithEventListeners(&events.ListenerAdapter{
 			OnGuildReady: func(event *events.GuildReady) {
 				log.InfoContext(ctx, "Guild ready", "guild", event.Guild.ID.String())
+				log.InfoContext(ctx, "Joined new guild", "guild", event.Guild.ID.String())
+				err = b.sendRegistrationForm(ctx, event)
+				if err != nil {
+					log.ErrorContext(ctx, "Failed to send registration form", "error", err)
+				}
 			},
 			OnGuildsReady: func(event *events.GuildsReady) {
 				log.InfoContext(ctx, "Guilds on shard ready", "shard", event.ShardID())
@@ -177,6 +183,13 @@ func (b *bot) newConnection(ctx context.Context) (err error) {
 				cmd := b.commands.Get(event.Data.CommandName())
 				if cmd != nil {
 					cmd.Handle(ctx, event)
+				}
+			},
+			OnGuildJoin: func(_ *events.GuildJoin) {
+			},
+			OnComponentInteraction: func(event *events.ComponentInteractionCreate) {
+				if err = b.handleFormSubmission(ctx, event); err != nil {
+					log.ErrorContext(ctx, "Failed to handle form submission", "error", err)
 				}
 			},
 		}),
@@ -198,4 +211,30 @@ func (b *bot) registerCommands() error {
 		}
 	}
 	return err
+}
+
+// sendRegistrationForm sends a registration form to the specified guild.
+func (b *bot) sendRegistrationForm(ctx context.Context, event *events.GuildReady) error {
+	log := logger.FromContext(ctx)
+
+	_, err := b.conn.Rest().CreateMessage(*event.Guild.SystemChannelID, discord.NewMessageCreateBuilder().
+		AddActionRow(discord.NewTextInput("guild_name", discord.TextInputStyleShort, "Name of the Guild").WithRequired(true)).
+		AddActionRow(discord.NewTextInput("guild_name", discord.TextInputStyleShort, "Name of the Guild").WithRequired(true)).
+		AddActionRow(discord.NewTextInput("guild_realm", discord.TextInputStyleShort, "Server of the Guild").WithRequired(true)).
+		AddActionRow(discord.NewTextInput("guild_region", discord.TextInputStyleShort, "Region of the Guild (EU, US, etc.)").WithRequired(true)).
+		AddActionRow(discord.NewTextInput("guild_faction", discord.TextInputStyleShort, "Faction of the Guild (Alliance, Horde, etc.)").WithRequired(true)).
+		Build(), rest.WithCtx(ctx))
+	if err != nil {
+		log.ErrorContext(ctx, "Failed to send registration form", "error", err)
+		return err
+	}
+	return nil
+}
+
+// handleFormSubmission processes the form data when a form is submitted.
+func (b *bot) handleFormSubmission(ctx context.Context, event *events.ComponentInteractionCreate) error { //nolint:unparam // TODO: implement this
+	log := logger.FromContext(ctx)
+	data := event.Data.CustomID()
+	log.InfoContext(ctx, "Form submitted", "data", data)
+	return nil
 }
