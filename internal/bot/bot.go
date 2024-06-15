@@ -51,6 +51,8 @@ type bot struct {
 	services services.Collection
 	// conn is the Discord connection.
 	conn disbot.Client
+	// errCh is the channel to signal errors.
+	errCh chan error
 	// done is the channel to signal the bot is done.
 	done chan struct{}
 	// once is the sync.Once to ensure the bot is only shutdown once.
@@ -60,13 +62,12 @@ type bot struct {
 // New creates a new bot instance.
 func New(cfg Config, svcs services.Collection) (Bot, error) {
 	b := &bot{
-		cfg: cfg,
-		api: api.NewServer(&api.Config{ // TODO: move api server to dedicated layer to avoid circular dependency
-			Address: ":8080",
-		}),
+		cfg:      cfg,
+		api:      api.NewServer(&api.Config{Address: ":8080"}), // TODO: move api server to dedicated layer to avoid circular dependency
 		commands: commands.NewCollection(svcs),
 		services: svcs,
 		conn:     nil,
+		errCh:    make(chan error, 1),
 		done:     make(chan struct{}, 1),
 		once:     sync.Once{},
 	}
@@ -94,12 +95,76 @@ func (b *bot) Run(ctx context.Context) error {
 		return err
 	}
 
-	err = b.newConnection(ctx)
+	err = b.startBot(ctx)
+	defer func() {
+		if b.conn != nil {
+			b.conn.Close(ctx)
+		}
+	}()
+	if err != nil {
+		log.ErrorContext(ctx, "Failed to start bot", "error", err)
+		return err
+	}
+
+	go func() {
+		err = b.api.Run(ctx)
+		if err != nil {
+			log.ErrorContext(ctx, "Failed to start API server", "error", err)
+			b.errCh <- err
+		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return b.Shutdown(ctx)
+		case <-b.done:
+			return nil
+		case err := <-b.errCh:
+			if err != nil {
+				return errors.Join(err, b.Shutdown(ctx))
+			}
+		}
+	}
+}
+
+// Shutdown stops the bot and all its components.
+func (b *bot) Shutdown(ctx context.Context) error {
+	var errs *ErrShutdown
+
+	b.once.Do(func() {
+		defer close(b.done)
+		defer close(b.errCh)
+		errs = &ErrShutdown{
+			ctxErr: ctx.Err(),
+		}
+
+		c, cancel := context.WithTimeout(ctx, shutdownTimeout)
+		defer cancel()
+
+		errs.svcErr = b.services.Close(c)
+		errs.apiErr = b.api.Shutdown(c)
+
+		if !errs.HasErrors() {
+			// Send the done signal to shutdown the bot if the shutdown wasn't caused by an error.
+			b.done <- struct{}{}
+		}
+	})
+
+	if errs != nil && errs.HasErrors() {
+		return errs
+	}
+
+	return nil
+}
+
+func (b *bot) startBot(ctx context.Context) error {
+	log := logger.FromContext(ctx)
+	err := b.newConnection(ctx)
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to create connection", "error", err)
 		return err
 	}
-	defer b.conn.Close(ctx)
 
 	err = b.registerCommands()
 	if err != nil {
@@ -111,40 +176,6 @@ func (b *bot) Run(ctx context.Context) error {
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to open gateway", "error", err)
 		return err
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return b.Shutdown(ctx)
-		case <-b.done:
-			return nil
-		}
-	}
-}
-
-// Shutdown stops the bot and all its components.
-func (b *bot) Shutdown(ctx context.Context) error {
-	var errs *ErrShutdown
-
-	b.once.Do(func() {
-		defer close(b.done)
-		errs = &ErrShutdown{
-			ctxErr: ctx.Err(),
-		}
-
-		c, cancel := context.WithTimeout(ctx, shutdownTimeout)
-		defer cancel()
-
-		errs.svcErr = b.services.Close(c)
-		if !errs.HasErrors() {
-			// Send the done signal to shutdown the bot if the shutdown wasn't caused by an error.
-			b.done <- struct{}{}
-		}
-	})
-
-	if errs != nil && errs.HasErrors() {
-		return errs
 	}
 
 	return nil
