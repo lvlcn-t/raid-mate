@@ -55,6 +55,7 @@ type Config struct {
 type server struct {
 	config      *Config
 	initialized bool
+	running     bool
 	app         *fiber.App
 	router      fiber.Router
 	mu          sync.Mutex
@@ -74,7 +75,7 @@ func NewServer(c *Config) Server {
 // Run runs the server.
 // Runs indefinitely until an error occurs or the server is shut down.
 func (s *server) Run(ctx context.Context) error {
-	_ = s.router.Use(middleware.Context(ctx))
+	_ = s.router.Use(middleware.Context(ctx), middleware.Recover(), middleware.Logger())
 	if !s.initialized {
 		err := s.Mount()
 		if err != nil {
@@ -82,6 +83,9 @@ func (s *server) Run(ctx context.Context) error {
 		}
 	}
 
+	s.mu.Lock()
+	s.running = true
+	s.mu.Unlock()
 	return s.app.Listen(s.config.Address)
 }
 
@@ -90,13 +94,13 @@ func (s *server) Run(ctx context.Context) error {
 func (s *server) Mount(routes ...RouteGroup) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.app.Server() != nil {
+	if s.running {
 		return &ErrAlreadyRunning{}
 	}
 
 	if !s.initialized {
 		_ = s.app.Get("/healthz", func(c fiber.Ctx) error {
-			logger.FromContext(c.UserContext()).DebugContext(c.Context(), "healthz")
+			logger.FromContext(c.UserContext()).DebugContext(c.Context(), "Health check")
 			return c.Status(http.StatusOK).JSON(fiber.Map{"status": "ok"})
 		})
 		s.initialized = true
