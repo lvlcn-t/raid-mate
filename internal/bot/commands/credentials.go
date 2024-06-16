@@ -8,6 +8,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/lvlcn-t/loggerhead/logger"
+	"github.com/lvlcn-t/raid-mate/internal/database/repo"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
 
@@ -57,7 +58,10 @@ func (c *Credentials) Handle(ctx context.Context, event *events.ApplicationComma
 		return
 	}
 
-	credentials, err := c.service.GetCredentials(ctx, event.GuildID().String(), account)
+	credentials, err := c.service.GetCredentials(ctx, repo.GetCredentialsParams{
+		GuildID: int64(*event.GuildID()),
+		Name:    account,
+	})
 	if err != nil {
 		cErr := event.CreateMessage(discord.NewMessageCreateBuilder().
 			SetContent("Error while getting credentials").

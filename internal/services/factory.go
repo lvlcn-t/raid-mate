@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/lvlcn-t/raid-mate/internal/services/feedback"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
@@ -22,13 +23,13 @@ type Config struct {
 }
 
 // NewCollection creates a new collection of services.
-func NewCollection(c *Config) (Collection, error) {
+func NewCollection(c *Config, db *sql.DB) (Collection, error) {
 	fb, err := feedback.NewService(&c.Feedback)
 	if err != nil {
 		return Collection{}, err
 	}
 
-	g, err := guild.NewService(&c.Guild)
+	g, err := guild.NewService(&c.Guild, db)
 	if err != nil {
 		return Collection{}, err
 	}

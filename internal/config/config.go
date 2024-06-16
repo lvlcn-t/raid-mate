@@ -7,6 +7,7 @@ import (
 	"github.com/lvlcn-t/go-kit/config"
 	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/bot"
+	"github.com/lvlcn-t/raid-mate/internal/database"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
@@ -18,6 +19,8 @@ type Config struct {
 	Services services.Config `yaml:"services" mapstructure:"services"`
 	// API is the configuration for the API server.
 	API api.Config `yaml:"api" mapstructure:"api"`
+	// Database is the configuration for the database.
+	Database database.Config `yaml:"database" mapstructure:"database"`
 }
 
 // IsEmpty returns whether the configuration is empty.

@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/lvlcn-t/raid-mate/internal/database/repo"
 )
 
 const (
@@ -39,7 +41,7 @@ type report struct {
 	End   int    `json:"end"`
 }
 
-func (c *client) FetchReports(ctx context.Context, guild Guild, date time.Time) (reports []report, err error) {
+func (c *client) FetchReports(ctx context.Context, guild repo.Guild, date time.Time) (reports []report, err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/v1/reports/guild/%s/%s/%s", logsBaseURL, guild.Name, guild.ServerName, guild.ServerRegion), http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)

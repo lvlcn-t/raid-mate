@@ -40,13 +40,13 @@ func (c *Profile) Handle(ctx context.Context, event *events.ApplicationCommandIn
 
 	member := event.Member()
 	if member == nil {
-		log.Error("Member is nil")
+		log.ErrorContext(ctx, "No member found in interaction")
 		return
 	}
 
 	profile, err := c.service.GetProfile(ctx, &guild.RequestProfile{
 		Type:    typ,
-		GuildID: event.GuildID().String(),
+		GuildID: *event.GuildID(),
 		User:    username,
 	})
 	if err != nil {

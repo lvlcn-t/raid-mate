@@ -10,6 +10,7 @@ import (
 	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/bot"
 	"github.com/lvlcn-t/raid-mate/internal/config"
+	"github.com/lvlcn-t/raid-mate/internal/database"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
 
@@ -39,7 +40,12 @@ func main() {
 	defer close(sigChan)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	svcs, err := services.NewCollection(&cfg.Services)
+	db, err := database.New(&cfg.Database)
+	if err != nil {
+		log.FatalContext(ctx, "Failed to create database connection", "error", err)
+	}
+
+	svcs, err := services.NewCollection(&cfg.Services, db)
 	if err != nil {
 		log.FatalContext(ctx, "Failed to create services", "error", err)
 	}

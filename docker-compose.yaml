@@ -1,0 +1,13 @@
+services:
+  postgresql:
+    image: postgres:latest
+    restart: always
+    container_name: raidmate-postgresql
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: ${RAIDMATE_DATABASE_NAME}
+      POSTGRES_USER: ${RAIDMATE_DATABASE_USER}
+      POSTGRES_PASSWORD: ${RAIDMATE_DATABASE_PASSWORD}
+    # volumes:
+    #   - /tmp/postgres/:/var/lib/postgresql/data
