@@ -42,7 +42,7 @@ type Config struct {
 func (c *Config) Validate() error {
 	var err error
 	if c.Token == "" {
-		err = errors.New("token is required")
+		err = errors.New("bot.token is required")
 	}
 	return errors.Join(err, c.Intents.Validate())
 }

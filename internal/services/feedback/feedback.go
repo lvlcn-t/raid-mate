@@ -45,9 +45,7 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	var err error
-	err = errors.Join(err, c.GitHub.Validate())
-	return errors.Join(err, c.DM.Validate())
+	return errors.Join(c.GitHub.Validate(), c.DM.Validate())
 }
 
 // NewService creates a new feedback service.

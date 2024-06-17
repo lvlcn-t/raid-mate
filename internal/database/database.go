@@ -30,19 +30,19 @@ func (c *Config) String() string {
 func (c *Config) Validate() error {
 	var err error
 	if c.Host == "" {
-		err = errors.New("host is required")
+		err = errors.New("database.host is required")
 	}
 	if c.Port == 0 {
-		err = errors.Join(err, errors.New("port is required"))
+		err = errors.Join(err, errors.New("database.port is required"))
 	}
 	if c.Name == "" {
-		err = errors.Join(err, errors.New("name is required"))
+		err = errors.Join(err, errors.New("database.name is required"))
 	}
 	if c.User == "" {
-		err = errors.Join(err, errors.New("user is required"))
+		err = errors.Join(err, errors.New("database.user is required"))
 	}
 	if c.Password == "" {
-		err = errors.Join(err, errors.New("password is required"))
+		err = errors.Join(err, errors.New("database.password is required"))
 	}
 	return err
 }

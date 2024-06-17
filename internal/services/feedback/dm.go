@@ -21,12 +21,12 @@ type dmConfig struct {
 func (c *dmConfig) Validate() error {
 	var err error
 	if c.ID == "" {
-		err = errors.New("id is required")
+		err = errors.New("services.feedback.dm.id is required")
 	}
 
 	_, pErr := snowflake.Parse(c.ID)
 	if pErr != nil {
-		err = errors.Join(err, fmt.Errorf("id is invalid: %w", pErr))
+		err = errors.Join(err, fmt.Errorf("services.feedback.dm.id is invalid: %w", pErr))
 	}
 	return err
 }

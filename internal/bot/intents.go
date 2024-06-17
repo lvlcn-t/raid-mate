@@ -18,13 +18,13 @@ type IntentsConfig struct {
 // Validate validates the configuration.
 func (c *IntentsConfig) Validate() error {
 	var err error
-	if len(c.Privileged) > 3 {
-		err = errors.New("too many privileged intents")
+	if len(c.Privileged) > len(intentRegistry) {
+		err = errors.New("bot.intents.privileged has too many intents")
 	}
 
 	for _, i := range c.Privileged {
 		if _, ok := intentRegistry[Intent(i)]; !ok {
-			err = errors.Join(err, fmt.Errorf("unknown intent: %q", i))
+			err = errors.Join(err, fmt.Errorf("bot.intents.privileged has an invalid intent: %q", i))
 		}
 	}
 

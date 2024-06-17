@@ -55,7 +55,7 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if c.Address == "" {
-		return errors.New("address is required")
+		return errors.New("api.address is required")
 	}
 	return nil
 }

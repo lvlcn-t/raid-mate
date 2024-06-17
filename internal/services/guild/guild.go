@@ -3,6 +3,7 @@ package guild
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -62,11 +63,11 @@ type Config struct {
 func (c *Config) Validate() error {
 	var err error
 	if c.Client.Token == "" {
-		err = fmt.Errorf("token is required")
+		err = errors.New("services.guild.client.token is required")
 	}
 
-	if c.Client.Timeout == 0 {
-		err = fmt.Errorf("timeout is required")
+	if c.Client.Timeout < 0 {
+		err = fmt.Errorf("services.guild.client.timeout cannot be negative, got %vs", c.Client.Timeout.Seconds())
 	}
 
 	return err

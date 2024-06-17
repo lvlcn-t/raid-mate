@@ -32,11 +32,7 @@ func (c Config) IsEmpty() bool { //nolint:gocritic // The viper cannot handle po
 
 // Validate validates the configuration.
 func (c *Config) Validate(_ context.Context) error {
-	err := c.Bot.Validate()
-	err = errors.Join(err, c.Services.Validate())
-	err = errors.Join(err, c.API.Validate())
-	err = errors.Join(err, c.Database.Validate())
-	return err
+	return errors.Join(c.Bot.Validate(), c.Services.Validate(), c.API.Validate(), c.Database.Validate())
 }
 
 // Load loads the configuration from the given path.

@@ -24,8 +24,7 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	err := errors.Join(c.Feedback.Validate())
-	return errors.Join(err, c.Guild.Validate())
+	return errors.Join(c.Feedback.Validate(), c.Guild.Validate())
 }
 
 // NewCollection creates a new collection of services.

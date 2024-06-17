@@ -24,13 +24,13 @@ type githubConfig struct {
 func (c *githubConfig) Validate() error {
 	var err error
 	if c.Owner == "" {
-		err = errors.New("owner is required")
+		err = errors.New("services.feedback.github.owner is required")
 	}
 	if c.Repo == "" {
-		err = errors.Join(err, errors.New("repo is required"))
+		err = errors.Join(err, errors.New("services.feedback.github.repo is required"))
 	}
 	if c.Token == "" {
-		err = errors.Join(err, errors.New("token is required"))
+		err = errors.Join(err, errors.New("services.feedback.github.token is required"))
 	}
 	return err
 }
