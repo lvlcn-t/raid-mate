@@ -1,6 +1,9 @@
 package bot
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/disgoorg/disgo/gateway"
 )
 
@@ -10,6 +13,22 @@ type IntentsConfig struct {
 	Unprivileged bool `yaml:"unprivileged"`
 	// Privileged is the list of privileged intents.
 	Privileged []string `yaml:"privileged"`
+}
+
+// Validate validates the configuration.
+func (c *IntentsConfig) Validate() error {
+	var err error
+	if len(c.Privileged) > 3 {
+		err = errors.New("too many privileged intents")
+	}
+
+	for _, i := range c.Privileged {
+		if _, ok := intentRegistry[Intent(i)]; !ok {
+			err = errors.Join(err, fmt.Errorf("unknown intent: %q", i))
+		}
+	}
+
+	return err
 }
 
 // List returns the list of intents based on the configuration.

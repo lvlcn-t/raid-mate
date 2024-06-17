@@ -21,6 +21,20 @@ type githubConfig struct {
 	Token string `yaml:"token" mapstructure:"token"`
 }
 
+func (c *githubConfig) Validate() error {
+	var err error
+	if c.Owner == "" {
+		err = errors.New("owner is required")
+	}
+	if c.Repo == "" {
+		err = errors.Join(err, errors.New("repo is required"))
+	}
+	if c.Token == "" {
+		err = errors.Join(err, errors.New("token is required"))
+	}
+	return err
+}
+
 type github struct {
 	config *githubConfig
 	client githubAPI

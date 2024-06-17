@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/lvlcn-t/raid-mate/internal/services/feedback"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
@@ -20,6 +21,11 @@ type Config struct {
 	Feedback feedback.Config `yaml:"feedback" mapstructure:"feedback"`
 	// Guild is the configuration for the guild service.
 	Guild guild.Config `yaml:"guild" mapstructure:"guild"`
+}
+
+func (c *Config) Validate() error {
+	err := errors.Join(c.Feedback.Validate())
+	return errors.Join(err, c.Guild.Validate())
 }
 
 // NewCollection creates a new collection of services.

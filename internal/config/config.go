@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"reflect"
 
 	"github.com/lvlcn-t/go-kit/config"
@@ -31,8 +32,11 @@ func (c Config) IsEmpty() bool { //nolint:gocritic // The viper cannot handle po
 
 // Validate validates the configuration.
 func (c *Config) Validate(_ context.Context) error {
-	// TODO: Add validation.
-	return nil
+	err := c.Bot.Validate()
+	err = errors.Join(err, c.Services.Validate())
+	err = errors.Join(err, c.API.Validate())
+	err = errors.Join(err, c.Database.Validate())
+	return err
 }
 
 // Load loads the configuration from the given path.

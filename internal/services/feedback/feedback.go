@@ -2,6 +2,7 @@ package feedback
 
 import (
 	"context"
+	"errors"
 	"slices"
 
 	"github.com/disgoorg/disgo/bot"
@@ -41,6 +42,12 @@ type Config struct {
 	GitHub githubConfig `yaml:"github" mapstructure:"github"`
 	// DM is the configuration for the DM service.
 	DM dmConfig `yaml:"dm" mapstructure:"dm"`
+}
+
+func (c *Config) Validate() error {
+	var err error
+	err = errors.Join(err, c.GitHub.Validate())
+	return errors.Join(err, c.DM.Validate())
 }
 
 // NewService creates a new feedback service.

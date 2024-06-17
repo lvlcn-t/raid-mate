@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -50,6 +51,13 @@ type RouteGroup struct {
 type Config struct {
 	// Address is the address to listen on.
 	Address string `yaml:"address" mapstructure:"address"`
+}
+
+func (c *Config) Validate() error {
+	if c.Address == "" {
+		return errors.New("address is required")
+	}
+	return nil
 }
 
 type server struct {

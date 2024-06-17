@@ -59,6 +59,19 @@ type Config struct {
 	}
 }
 
+func (c *Config) Validate() error {
+	var err error
+	if c.Client.Token == "" {
+		err = fmt.Errorf("token is required")
+	}
+
+	if c.Client.Timeout == 0 {
+		err = fmt.Errorf("timeout is required")
+	}
+
+	return err
+}
+
 // NewService creates a new guild service.
 func NewService(c *Config, db *sql.DB) (Service, error) {
 	return &guild{

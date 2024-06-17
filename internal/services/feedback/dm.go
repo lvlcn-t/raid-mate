@@ -2,6 +2,8 @@ package feedback
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
@@ -14,6 +16,19 @@ import (
 type dmConfig struct {
 	// ID is the Discord user ID.
 	ID string `yaml:"id" mapstructure:"id"`
+}
+
+func (c *dmConfig) Validate() error {
+	var err error
+	if c.ID == "" {
+		err = errors.New("id is required")
+	}
+
+	_, pErr := snowflake.Parse(c.ID)
+	if pErr != nil {
+		err = errors.Join(err, fmt.Errorf("id is invalid: %w", pErr))
+	}
+	return err
 }
 
 type dm struct {
