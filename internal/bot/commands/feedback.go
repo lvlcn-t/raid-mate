@@ -2,11 +2,15 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"net/http"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/gofiber/fiber/v3"
 	"github.com/lvlcn-t/loggerhead/logger"
+	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/services/feedback"
 )
 
@@ -82,6 +86,32 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 	if err != nil {
 		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
+}
+
+// HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
+func (c *Feedback) HandleHTTP(ctx fiber.Ctx) error {
+	log := logger.FromContext(ctx.UserContext()).With("command", c.Name())
+
+	var req feedback.Request
+	err := json.Unmarshal(ctx.Body(), &req)
+	if err != nil {
+		log.DebugContext(ctx.Context(), "Error unmarshalling request", "error", err)
+		return api.BadRequestResponse(ctx, "invalid request")
+	}
+
+	err = c.validateRequest(req.Feedback)
+	if err != nil {
+		log.DebugContext(ctx.Context(), "Error validating request", "error", err)
+		return api.BadRequestResponse(ctx, "invalid feedback")
+	}
+
+	err = c.service.Submit(ctx.Context(), req, nil)
+	if err != nil {
+		log.ErrorContext(ctx.Context(), "Error submitting feedback", "error", err)
+		return api.InternalServerErrorResponse(ctx, "error submitting feedback")
+	}
+
+	return ctx.Status(http.StatusOK).JSON(fiber.Map{"status": http.StatusText(http.StatusOK)})
 }
 
 // Info returns the interaction command information.

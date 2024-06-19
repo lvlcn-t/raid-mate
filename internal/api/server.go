@@ -134,3 +134,39 @@ func (s *server) Mount(routes ...RouteGroup) (err error) {
 func (s *server) Shutdown(ctx context.Context) error {
 	return s.app.ShutdownWithContext(ctx)
 }
+
+// Params returns the parameter with the given name from the context and converts it to the given type.
+func Params[T any](ctx fiber.Ctx, name string, conv func(string) (T, error)) (T, error) {
+	var empty T
+	v := ctx.Params(name)
+	if v == "" {
+		return empty, fmt.Errorf("missing parameter %q", name)
+	}
+	if _, ok := any(empty).(string); ok {
+		if conv == nil {
+			return any(v).(T), nil
+		}
+	}
+
+	return conv(v)
+}
+
+// BadRequestResponse sends a bad request response.
+func BadRequestResponse(ctx fiber.Ctx, msg string) error {
+	return ctx.Status(http.StatusBadRequest).JSON(NewErrorResponse(msg, http.StatusBadRequest))
+}
+
+// InternalServerErrorResponse sends an internal server error response.
+func InternalServerErrorResponse(ctx fiber.Ctx, msg string) error {
+	return ctx.Status(http.StatusInternalServerError).JSON(NewErrorResponse(msg, http.StatusInternalServerError))
+}
+
+// NewErrorResponse creates a new error response.
+func NewErrorResponse(msg string, status int) fiber.Map {
+	code := http.StatusText(status)
+	if code == "" {
+		code = "Unknown"
+	}
+
+	return fiber.Map{"error": fiber.Map{"message": msg, "code": code}}
+}

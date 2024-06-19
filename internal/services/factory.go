@@ -28,21 +28,11 @@ func (c *Config) Validate() error {
 }
 
 // NewCollection creates a new collection of services.
-func NewCollection(c *Config, db *sql.DB) (Collection, error) {
-	fb, err := feedback.NewService(&c.Feedback)
-	if err != nil {
-		return Collection{}, err
-	}
-
-	g, err := guild.NewService(&c.Guild, db)
-	if err != nil {
-		return Collection{}, err
-	}
-
+func NewCollection(c *Config, db *sql.DB) Collection {
 	return Collection{
-		Feedback: fb,
-		Guild:    g,
-	}, nil
+		Feedback: feedback.NewService(&c.Feedback),
+		Guild:    guild.NewService(&c.Guild, db),
+	}
 }
 
 func (c *Collection) Connect() error {

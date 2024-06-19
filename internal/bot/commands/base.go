@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/disgoorg/disgo/events"
+	"github.com/gofiber/fiber/v3"
+	"github.com/lvlcn-t/raid-mate/internal/api"
 )
 
 // Event is an constaint interface for all Discord events.
@@ -19,6 +21,10 @@ type Command[T Event] interface {
 	Name() string
 	// Handle is the handler for the command that is called when the event is triggered.
 	Handle(ctx context.Context, event T)
+	// HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
+	HandleHTTP(ctx fiber.Ctx) error
+	// Route returns the route for the command.
+	Route() string
 }
 
 // Base is a common base for all commands.
@@ -52,6 +58,17 @@ func (c *Base[T]) Name() string {
 // This is a default implementation that panics if not overridden.
 func (c *Base[T]) Handle(_ context.Context, _ T) {
 	panic(fmt.Sprintf("command %q does not have a handler", c.Name()))
+}
+
+// HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
+// This is a default implementation that returns a 404 status.
+func (c *Base[T]) HandleHTTP(ctx fiber.Ctx) error {
+	return api.BadRequestResponse(ctx, "command not found")
+}
+
+// Route returns the route for the command.
+func (c *Base[T]) Route() string {
+	return fmt.Sprintf("/%s", c.Name())
 }
 
 // NewBase creates the common base for all commands.

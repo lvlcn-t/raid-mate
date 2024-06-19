@@ -67,18 +67,18 @@ func (c *Config) Validate() error {
 	}
 
 	if c.Client.Timeout < 0 {
-		err = fmt.Errorf("services.guild.client.timeout cannot be negative, got %vs", c.Client.Timeout.Seconds())
+		err = errors.Join(err, fmt.Errorf("services.guild.client.timeout cannot be negative, got %vs", c.Client.Timeout.Seconds()))
 	}
 
 	return err
 }
 
 // NewService creates a new guild service.
-func NewService(c *Config, db *sql.DB) (Service, error) {
+func NewService(c *Config, db *sql.DB) Service {
 	return &guild{
 		database: db,
 		client:   NewClient(c.Client.Token, c.Client.Timeout),
-	}, nil
+	}
 }
 
 func (s *guild) List(ctx context.Context) ([]repo.Guild, error) {

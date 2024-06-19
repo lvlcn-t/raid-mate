@@ -2,12 +2,17 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"net/http"
 	"strings"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/lvlcn-t/loggerhead/logger"
+	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/database/repo"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
@@ -82,6 +87,49 @@ func (c *Credentials) Handle(ctx context.Context, event *events.ApplicationComma
 	if err != nil {
 		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
+}
+
+// HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
+func (c *Credentials) HandleHTTP(ctx fiber.Ctx) error {
+	log := logger.FromContext(ctx.UserContext()).With("command", c.Name())
+	type request struct {
+		Account string `json:"account"`
+	}
+
+	var req request
+	err := json.Unmarshal(ctx.Body(), &req)
+	if err != nil {
+		log.DebugContext(ctx.Context(), "Error unmarshalling request", "error", err)
+		return api.BadRequestResponse(ctx, "malformed request")
+	}
+
+	gid, err := api.Params(ctx, "guildID", snowflake.Parse)
+	if err != nil {
+		log.DebugContext(ctx.Context(), "Error parsing guild ID", "error", err)
+		return api.BadRequestResponse(ctx, "missing or invalid guild ID")
+	}
+
+	err = c.validateRequest(req.Account)
+	if err != nil {
+		log.DebugContext(ctx.Context(), "Error validating request", "error", err)
+		return api.BadRequestResponse(ctx, err.Error())
+	}
+
+	credentials, err := c.service.GetCredentials(ctx.UserContext(), repo.GetCredentialsParams{
+		GuildID: int64(gid),
+		Name:    req.Account,
+	})
+	if err != nil {
+		log.ErrorContext(ctx.Context(), "Error getting credentials", "error", err)
+		return api.InternalServerErrorResponse(ctx, "error getting credentials")
+	}
+
+	return ctx.Status(http.StatusOK).JSON(fiber.Map{"username": credentials.Username, "password": credentials.Password})
+}
+
+// Route returns the route for the command.
+func (c *Credentials) Route() string {
+	return "/guilds/:guildID/credentials"
 }
 
 // Info returns the interaction command information.

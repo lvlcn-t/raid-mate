@@ -79,8 +79,8 @@ func (c *client) FetchReports(ctx context.Context, guild repo.Guild, date time.T
 }
 
 type Profiles struct {
-	UserProfile  *UserProfile
-	GuildProfile *GuildProfile
+	UserProfile  *UserProfile  `json:"user_profile,omitempty"`
+	GuildProfile *GuildProfile `json:"guild_profile,omitempty"`
 }
 
 func (p *Profiles) IsUser() bool {

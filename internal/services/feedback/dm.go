@@ -47,6 +47,10 @@ func newDM(c *dmConfig) *dm {
 }
 
 func (s *dm) Submit(ctx context.Context, req Request, client bot.Client) error {
+	if client == nil {
+		return nil
+	}
+
 	log := logger.FromContext(ctx)
 	dm, err := client.Rest().CreateDMChannel(s.id, rest.WithCtx(ctx))
 	if err != nil {

@@ -45,12 +45,7 @@ func main() {
 		log.FatalContext(ctx, "Failed to create database connection", "error", err)
 	}
 
-	svcs, err := services.NewCollection(&cfg.Services, db)
-	if err != nil {
-		log.FatalContext(ctx, "Failed to create services", "error", err)
-	}
-
-	b, err := bot.New(cfg.Bot, svcs)
+	b, err := bot.New(cfg.Bot, services.NewCollection(&cfg.Services, db))
 	if err != nil {
 		log.FatalContext(ctx, "Failed to create bot", "error", err)
 	}

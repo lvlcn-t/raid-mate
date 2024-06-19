@@ -3,12 +3,16 @@ package commands
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/lvlcn-t/loggerhead/logger"
+	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
 
@@ -75,6 +79,34 @@ func (c *Logs) Handle(ctx context.Context, event *events.ApplicationCommandInter
 	if err != nil {
 		log.ErrorContext(ctx, "Error replying to interaction", "error", err)
 	}
+}
+
+// HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
+func (c *Logs) HandleHTTP(ctx fiber.Ctx) error {
+	log := logger.FromContext(ctx.UserContext()).With("command", c.Name())
+	gid, err := api.Params(ctx, "guildID", snowflake.Parse)
+	if err != nil {
+		log.DebugContext(ctx.Context(), "Error parsing guild ID", "error", err)
+		return api.BadRequestResponse(ctx, "missing or invalid guild ID")
+	}
+
+	date, err := c.parseDate(ctx.Query("date", time.Now().Format(time.DateOnly)))
+	if err != nil {
+		log.DebugContext(ctx.Context(), "Error parsing date", "error", err)
+		return api.BadRequestResponse(ctx, "invalid date")
+	}
+
+	logs, err := c.service.GetReports(ctx.Context(), gid, date)
+	if err != nil {
+		return api.InternalServerErrorResponse(ctx, "Error while getting logs")
+	}
+
+	return ctx.Status(http.StatusOK).JSON(fiber.Map{"logs": logs})
+}
+
+// Route returns the route for the command.
+func (c *Logs) Route() string {
+	return "/guilds/:guildID/logs"
 }
 
 func (c *Logs) Info() discord.ApplicationCommandCreate {

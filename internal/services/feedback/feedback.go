@@ -49,14 +49,14 @@ func (c *Config) Validate() error {
 }
 
 // NewService creates a new feedback service.
-func NewService(c *Config) (Service, error) {
+func NewService(c *Config) Service {
 	return &feedback{
 		selected: c.Service,
 		registry: map[string]Service{
 			"github": newGitHub(&c.GitHub),
 			"dm":     newDM(&c.DM),
 		},
-	}, nil
+	}
 }
 
 // Submit submits the feedback.

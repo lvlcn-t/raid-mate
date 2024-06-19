@@ -73,13 +73,13 @@ func (c *Collection) Infos() []discord.ApplicationCommandCreate {
 	return infos
 }
 
-func (c *Collection) Router() *fiber.App {
-	// app := fiber.New() //nolint:gocritic // TODO: implement this
-	// for _, cmd := range c.InteractionCommands() {
-	// 	app.Post(cmd.Name(), cmd.HandleHTTP)
-	// }
-	// return app
-	return fiber.New()
+// Router returns a router for the collection.
+func (c *Collection) Router() fiber.Router {
+	app := fiber.New()
+	for _, cmd := range c.InteractionCommands() {
+		app.Post(cmd.Route(), cmd.HandleHTTP)
+	}
+	return app
 }
 
 // InteractionCommand is a command that is triggered by an interaction.
