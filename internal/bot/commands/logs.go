@@ -105,8 +105,8 @@ func (c *Logs) HandleHTTP(ctx fiber.Ctx) error {
 }
 
 // Route returns the route for the command.
-func (c *Logs) Route() string {
-	return "/guilds/:guildID/logs"
+func (c *Logs) Route() (methods []string, path string) {
+	return []string{http.MethodGet}, "/guilds/:guildID/logs"
 }
 
 func (c *Logs) Info() discord.ApplicationCommandCreate {

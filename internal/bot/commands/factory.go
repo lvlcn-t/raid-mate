@@ -77,7 +77,12 @@ func (c *Collection) Infos() []discord.ApplicationCommandCreate {
 func (c *Collection) Router() fiber.Router {
 	app := fiber.New()
 	for _, cmd := range c.InteractionCommands() {
-		app.Post(cmd.Route(), cmd.HandleHTTP)
+		methods, path := cmd.Route()
+		if methods == nil {
+			app.All(path, cmd.HandleHTTP)
+			continue
+		}
+		app.Add(methods, path, cmd.HandleHTTP)
 	}
 	return app
 }

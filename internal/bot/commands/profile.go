@@ -118,8 +118,8 @@ func (c *Profile) HandleHTTP(ctx fiber.Ctx) error {
 }
 
 // Route returns the route of the command.
-func (c *Profile) Route() string {
-	return "/guilds/:guildID/profile/:name"
+func (c *Profile) Route() (methods []string, path string) {
+	return []string{http.MethodGet}, "/guilds/:guildID/profile/:name"
 }
 
 // Info returns the interaction command information.

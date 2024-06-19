@@ -24,7 +24,7 @@ type Command[T Event] interface {
 	// HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
 	HandleHTTP(ctx fiber.Ctx) error
 	// Route returns the route for the command.
-	Route() string
+	Route() (methods []string, path string)
 }
 
 // Base is a common base for all commands.
@@ -67,8 +67,8 @@ func (c *Base[T]) HandleHTTP(ctx fiber.Ctx) error {
 }
 
 // Route returns the route for the command.
-func (c *Base[T]) Route() string {
-	return fmt.Sprintf("/%s", c.Name())
+func (c *Base[T]) Route() (methods []string, path string) {
+	return nil, fmt.Sprintf("/%s", c.Name())
 }
 
 // NewBase creates the common base for all commands.

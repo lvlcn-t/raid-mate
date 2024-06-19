@@ -128,8 +128,8 @@ func (c *Credentials) HandleHTTP(ctx fiber.Ctx) error {
 }
 
 // Route returns the route for the command.
-func (c *Credentials) Route() string {
-	return "/guilds/:guildID/credentials"
+func (c *Credentials) Route() (methods []string, route string) {
+	return []string{http.MethodPost}, "/guilds/:guildID/credentials"
 }
 
 // Info returns the interaction command information.
