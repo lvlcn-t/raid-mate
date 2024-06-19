@@ -3,6 +3,7 @@ package feedback
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 
 	"github.com/disgoorg/disgo/bot"
@@ -45,7 +46,23 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	return errors.Join(c.GitHub.Validate(), c.DM.Validate())
+	if slices.Contains(c.Service, "all") {
+		return errors.Join(c.GitHub.Validate(), c.DM.Validate())
+	}
+
+	var errs []error
+	for _, svc := range c.Service {
+		switch svc {
+		case "dm":
+			errs = append(errs, c.DM.Validate())
+		case "github":
+			errs = append(errs, c.GitHub.Validate())
+		default:
+			errs = append(errs, fmt.Errorf("invalid feedback service %q", svc))
+		}
+	}
+
+	return errors.Join(errs...)
 }
 
 // NewService creates a new feedback service.
