@@ -136,19 +136,20 @@ func (s *server) Shutdown(ctx context.Context) error {
 }
 
 // Params returns the parameter with the given name from the context and converts it to the given type.
-func Params[T any](ctx fiber.Ctx, name string, conv func(string) (T, error)) (T, error) {
+func Params[T any](ctx fiber.Ctx, name string, parse func(string) (T, error)) (T, error) {
 	var empty T
 	v := ctx.Params(name)
 	if v == "" {
 		return empty, fmt.Errorf("missing parameter %q", name)
 	}
-	if _, ok := any(empty).(string); ok {
-		if conv == nil {
+	if parse == nil {
+		if _, ok := any(empty).(string); ok {
 			return any(v).(T), nil
 		}
+		return empty, fmt.Errorf("no parser provided for parameter %q", name)
 	}
 
-	return conv(v)
+	return parse(v)
 }
 
 // BadRequestResponse sends a bad request response.
