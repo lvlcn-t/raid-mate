@@ -16,7 +16,7 @@ type Server interface {
 	// Run runs the server.
 	// Runs indefinitely until an error occurs or the server is shut down.
 	//
-	// If no routes were mounted before, it will mount a health check route.
+	// If no health check route was mounted before, a health check route will be mounted.
 	//
 	// Example setup:
 	//
@@ -34,7 +34,6 @@ type Server interface {
 	//	_ = srv.Run(context.Background())
 	Run(ctx context.Context) error
 	// Mount adds the provided route groups to the server.
-	// If the server is not initialized, it will add a health check route.
 	Mount(routes ...RouteGroup) error
 	// Shutdown gracefully shuts down the server.
 	Shutdown(ctx context.Context) error
@@ -61,44 +60,40 @@ func (c *Config) Validate() error {
 }
 
 type server struct {
-	config      *Config
-	initialized bool
-	running     bool
-	app         *fiber.App
-	router      fiber.Router
-	mu          sync.Mutex
+	mu      sync.Mutex
+	config  *Config
+	app     *fiber.App
+	router  fiber.Router
+	groups  []RouteGroup
+	running bool
 }
 
 // NewServer creates a new server with the provided configuration.
 func NewServer(c *Config) Server {
 	app := fiber.New()
 	return &server{
-		config:      c,
-		initialized: false,
-		app:         app,
-		router:      app.Group("/api"),
+		mu:      sync.Mutex{},
+		config:  c,
+		app:     app,
+		router:  app.Group("/api"),
+		groups:  []RouteGroup{},
+		running: false,
 	}
 }
 
 // Run runs the server.
+// It will mount a health check route if no health check route was mounted before.
 // Runs indefinitely until an error occurs or the server is shut down.
 func (s *server) Run(ctx context.Context) error {
-	_ = s.router.Use(middleware.Context(ctx), middleware.Recover(), middleware.Logger())
-	if !s.initialized {
-		err := s.Mount()
-		if err != nil {
-			return err
-		}
+	err := s.attachRoutes(ctx)
+	if err != nil {
+		return err
 	}
 
-	s.mu.Lock()
-	s.running = true
-	s.mu.Unlock()
 	return s.app.Listen(s.config.Address)
 }
 
 // Mount adds the provided route groups to the server.
-// If the server is not initialized, it will add a health check route.
 func (s *server) Mount(routes ...RouteGroup) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -106,14 +101,20 @@ func (s *server) Mount(routes ...RouteGroup) (err error) {
 		return &ErrAlreadyRunning{}
 	}
 
-	if !s.initialized {
-		_ = s.app.Get("/healthz", func(c fiber.Ctx) error {
-			logger.FromContext(c.UserContext()).DebugContext(c.Context(), "Health check")
-			return c.Status(http.StatusOK).JSON(fiber.Map{"status": "ok"})
-		})
-		s.initialized = true
+	s.groups = append(s.groups, routes...)
+	return nil
+}
+
+// attachRoutes attaches the routes to the server.
+// It will mount a health check route if no health check route was mounted before.
+func (s *server) attachRoutes(ctx context.Context) (err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.running {
+		return &ErrAlreadyRunning{}
 	}
 
+	_ = s.router.Use(middleware.Context(ctx), middleware.Recover(), middleware.Logger())
 	defer func() {
 		if r := recover(); r != nil {
 			if rErr, ok := r.(error); ok {
@@ -124,10 +125,27 @@ func (s *server) Mount(routes ...RouteGroup) (err error) {
 		}
 	}()
 
-	for _, r := range routes {
-		s.router.Use(r.Path, r.App)
+	for _, group := range s.groups {
+		s.router.Use(group.Path, group.App)
 	}
 
+	registered := s.app.GetRoutes()
+	healthz := false
+	for i := range registered {
+		logger.FromContext(ctx).DebugContext(ctx, "Mounted route", "method", registered[i].Method, "path", registered[i].Path)
+		if registered[i].Path == "/healthz" {
+			healthz = true
+		}
+	}
+
+	if !healthz {
+		_ = s.app.Get("/healthz", func(c fiber.Ctx) error {
+			logger.FromContext(c.UserContext()).DebugContext(c.Context(), "Health check")
+			return c.Status(http.StatusOK).JSON(fiber.Map{"status": "ok"})
+		}, middleware.Context(ctx), middleware.Recover())
+	}
+
+	s.running = true
 	return nil
 }
 

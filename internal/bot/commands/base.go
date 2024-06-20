@@ -3,10 +3,10 @@ package commands
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/disgoorg/disgo/events"
 	"github.com/gofiber/fiber/v3"
-	"github.com/lvlcn-t/raid-mate/internal/api"
 )
 
 // Event is an constaint interface for all Discord events.
@@ -63,7 +63,7 @@ func (c *Base[T]) Handle(_ context.Context, _ T) {
 // HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
 // This is a default implementation that returns a 404 status.
 func (c *Base[T]) HandleHTTP(ctx fiber.Ctx) error {
-	return api.BadRequestResponse(ctx, "command not found")
+	return ctx.SendStatus(http.StatusNotFound)
 }
 
 // Route returns the route for the command.
