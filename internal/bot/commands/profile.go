@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/api"
+	"github.com/lvlcn-t/raid-mate/internal/bot/colors"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
 
@@ -167,7 +168,7 @@ func (c *Profile) createEmbed(profile *guild.Profiles) discord.Embed {
 	embed := discord.NewEmbedBuilder().
 		SetTitle("Profile").
 		SetDescription("Here is the profile you requested.").
-		SetColor(red)
+		SetColor(colors.Red.Int())
 
 	if profile.IsGuild() {
 		embed.AddFields(

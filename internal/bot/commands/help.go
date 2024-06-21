@@ -7,10 +7,8 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/lvlcn-t/loggerhead/logger"
+	"github.com/lvlcn-t/raid-mate/internal/bot/colors"
 )
-
-// red is the color red.
-const red = 0xf44336
 
 var (
 	_ Command[*events.ApplicationCommandInteractionCreate] = (*Help)(nil)
@@ -100,7 +98,7 @@ func (c *Help) getInfo(command ApplicationInteractionCommand) discord.Embed {
 	return discord.NewEmbedBuilder().
 		SetTitle(command.Name()).
 		SetDescription(info.Description).
-		SetColor(red).
+		SetColor(colors.Red.Int()).
 		Build()
 }
 
@@ -120,7 +118,7 @@ func (c *Help) sendDefaultHelp(ctx context.Context, event *events.ApplicationCom
 	embed := discord.NewEmbedBuilder().
 		SetTitle("Help").
 		SetDescription("Here are the available commands:").
-		SetColor(red).
+		SetColor(colors.Red.Int()).
 		AddFields(fields...).
 		Build()
 

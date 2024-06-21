@@ -16,6 +16,7 @@ import (
 	"github.com/disgoorg/disgo/sharding"
 	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/internal/api"
+	"github.com/lvlcn-t/raid-mate/internal/bot/colors"
 	"github.com/lvlcn-t/raid-mate/internal/bot/commands"
 	"github.com/lvlcn-t/raid-mate/internal/services"
 )
@@ -60,6 +61,8 @@ type bot struct {
 	services services.Collection
 	// conn is the Discord connection.
 	conn disbot.Client
+	// app is the bot's application info.
+	app *discord.Application
 	// errCh is the channel to signal errors.
 	errCh chan error
 	// done is the channel to signal the bot is done.
@@ -72,10 +75,11 @@ type bot struct {
 func New(cfg Config, svcs services.Collection) (Bot, error) {
 	b := &bot{
 		cfg:      cfg,
-		api:      api.NewServer(&api.Config{Address: ":8080"}), // TODO: move api server to dedicated layer to avoid circular dependency
+		api:      api.NewServer(&api.Config{Address: ":8080"}),
 		commands: commands.NewCollection(svcs),
 		services: svcs,
 		conn:     nil,
+		app:      nil,
 		errCh:    make(chan error, 1),
 		done:     make(chan struct{}, 1),
 		once:     sync.Once{},
@@ -173,6 +177,12 @@ func (b *bot) startBot(ctx context.Context) error {
 	err := b.newConnection(ctx)
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to create connection", "error", err)
+		return err
+	}
+
+	b.app, err = b.conn.Rest().GetBotApplicationInfo()
+	if err != nil {
+		log.ErrorContext(ctx, "Failed to get bot application info", "error", err)
 		return err
 	}
 
@@ -278,14 +288,26 @@ func (b *bot) handleGuildJoin(ctx context.Context, event *events.GuildJoin) {
 		return
 	}
 
-	log.InfoContext(ctx, "Joined new guild", "guild", event.Guild.ID.String())
+	appIcon := b.app.Bot.EffectiveAvatarURL()
+	guildIcon := event.Guild.IconURL()
+	if guildIcon == nil {
+		guildIcon = &appIcon
+	}
+
+	log.InfoContext(ctx, "Joined new guild", "guild", event.Guild.ID.String(), "app_icon", appIcon, "guild_icon", *guildIcon)
+	embed := discord.NewEmbedBuilder().
+		SetTitle("Welcome to Raid Mate!").
+		SetDescription("Hello! I'm Raid Mate, your friendly raid bot. Let's get your guild set up. Click the button below to get started.").
+		SetColor(colors.Blue.Int()).
+		SetThumbnail(*guildIcon).
+		AddField("Getting Started", "Click the button below to configure your guild.", false).
+		SetFooter(b.app.Name, b.app.Bot.EffectiveAvatarURL()).
+		SetTimestamp(time.Now()).
+		Build()
+
 	_, err = event.Client().Rest().CreateMessage(*event.Guild.SystemChannelID, discord.NewMessageCreateBuilder().
-		SetContent("Hello! I'm Raid Mate, your friendly raid bot. First things first, you need to set up your guild. Click the button below to get started.").
-		AddContainerComponents(
-			discord.NewActionRow(
-				discord.NewDangerButton("Set me up!", "guild"),
-			),
-		).
+		AddEmbeds(embed).
+		AddActionRow(discord.NewPrimaryButton("Set me up!", "guild")).
 		Build(), rest.WithCtx(ctx))
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to send message", "error", err)
