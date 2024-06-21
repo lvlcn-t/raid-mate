@@ -14,7 +14,7 @@ const red = 0xf44336
 
 var (
 	_ Command[*events.ApplicationCommandInteractionCreate] = (*Help)(nil)
-	_ InteractionCommand                                   = (*Help)(nil)
+	_ ApplicationInteractionCommand                        = (*Help)(nil)
 )
 
 // Help is a command to get help on how to use the bot.
@@ -22,13 +22,13 @@ type Help struct {
 	// Base is the common base for all commands.
 	*Base[*events.ApplicationCommandInteractionCreate]
 	// commands is the list of commands to get help for.
-	commands []InteractionCommand
+	commands []ApplicationInteractionCommand
 }
 
 // newHelp creates a new help command.
-func newHelp(cmds []InteractionCommand) *Help {
+func newHelp(cmds []ApplicationInteractionCommand) *Help {
 	cmd := &Help{
-		Base:     NewBase("help"),
+		Base:     NewBase[*events.ApplicationCommandInteractionCreate]("help"),
 		commands: cmds,
 	}
 	cmd.commands = append(cmd.commands, cmd)
@@ -85,7 +85,7 @@ func (c *Help) Info() discord.ApplicationCommandCreate {
 }
 
 // lookup finds the interaction command with the given name.
-func (c *Help) lookup(name string) InteractionCommand {
+func (c *Help) lookup(name string) ApplicationInteractionCommand {
 	for _, command := range c.commands {
 		if command.Name() == name {
 			return command
@@ -95,7 +95,7 @@ func (c *Help) lookup(name string) InteractionCommand {
 }
 
 // getInfo returns the information for the given command.
-func (c *Help) getInfo(command InteractionCommand) discord.Embed {
+func (c *Help) getInfo(command ApplicationInteractionCommand) discord.Embed {
 	info := command.Info().(discord.SlashCommandCreate)
 	return discord.NewEmbedBuilder().
 		SetTitle(command.Name()).

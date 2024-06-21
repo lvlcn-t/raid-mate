@@ -12,7 +12,7 @@ import (
 // Event is an constaint interface for all Discord events.
 // This should only be used for type constraints.
 type Event interface {
-	*events.ApplicationCommandInteractionCreate
+	*events.ApplicationCommandInteractionCreate | *events.ComponentInteractionCreate
 }
 
 // Command is an interface for a command.

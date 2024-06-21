@@ -19,7 +19,7 @@ import (
 
 var (
 	_ Command[*events.ApplicationCommandInteractionCreate] = (*Credentials)(nil)
-	_ InteractionCommand                                   = (*Credentials)(nil)
+	_ ApplicationInteractionCommand                        = (*Credentials)(nil)
 )
 
 // Credentials is a command to get the login credentials for an account.
@@ -33,7 +33,7 @@ type Credentials struct {
 // newCredentials creates a new credentials command.
 func newCredentials(svc guild.Service) *Credentials {
 	return &Credentials{
-		Base:    NewBase("credentials"),
+		Base:    NewBase[*events.ApplicationCommandInteractionCreate]("credentials"),
 		service: svc,
 	}
 }

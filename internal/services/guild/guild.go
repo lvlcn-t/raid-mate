@@ -129,13 +129,11 @@ func (s *guild) GetReports(ctx context.Context, guildID snowflake.ID, date time.
 }
 
 func (s *guild) GetProfile(ctx context.Context, req *RequestProfile) (*Profiles, error) {
-	if req.Type == "guild" {
-		guild, err := s.Get(ctx, req.GuildID)
-		if err != nil {
-			return nil, fmt.Errorf("error getting guild: %w", err)
-		}
-		req.guild = guild
+	guild, err := s.Get(ctx, req.GuildID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting guild: %w", err)
 	}
+	req.guild = guild
 
 	return s.client.FetchProfile(ctx, req)
 }

@@ -18,7 +18,7 @@ import (
 
 var (
 	_ Command[*events.ApplicationCommandInteractionCreate] = (*Logs)(nil)
-	_ InteractionCommand                                   = (*Logs)(nil)
+	_ ApplicationInteractionCommand                        = (*Logs)(nil)
 )
 
 // Logs is a command to get the logs for a guild.
@@ -32,7 +32,7 @@ type Logs struct {
 // newLogs creates a new logs command.
 func newLogs(svc guild.Service) *Logs {
 	return &Logs{
-		Base:    NewBase("logs"),
+		Base:    NewBase[*events.ApplicationCommandInteractionCreate]("logs"),
 		service: svc,
 	}
 }

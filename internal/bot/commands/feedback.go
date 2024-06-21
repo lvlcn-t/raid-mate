@@ -16,7 +16,7 @@ import (
 
 var (
 	_ Command[*events.ApplicationCommandInteractionCreate] = (*Feedback)(nil)
-	_ InteractionCommand                                   = (*Feedback)(nil)
+	_ ApplicationInteractionCommand                        = (*Feedback)(nil)
 )
 
 // Feedback is a command to submit feedback.
@@ -31,7 +31,7 @@ type Feedback struct {
 func newFeedback(svc feedback.Service) *Feedback {
 	name := "feedback"
 	return &Feedback{
-		Base:    NewBase(name),
+		Base:    NewBase[*events.ApplicationCommandInteractionCreate](name),
 		service: svc,
 	}
 }

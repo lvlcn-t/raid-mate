@@ -228,7 +228,7 @@ func (c *client) FetchProfile(ctx context.Context, req *RequestProfile) (*Profil
 }
 
 func (c *client) getGuildProfile(ctx context.Context, r *RequestProfile) (profile *GuildProfile, err error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/characters/profile", profileBaseURL), http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/guilds/profile", profileBaseURL), http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -265,7 +265,7 @@ func (c *client) getGuildProfile(ctx context.Context, r *RequestProfile) (profil
 }
 
 func (c *client) getUserProfile(ctx context.Context, r *RequestProfile) (profile *UserProfile, err error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/guilds/profile", profileBaseURL), http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/characters/profile", profileBaseURL), http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}

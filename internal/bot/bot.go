@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"sync"
 	"time"
@@ -209,26 +210,33 @@ func (b *bot) newConnection(ctx context.Context) (err error) {
 		disbot.WithEventListeners(&events.ListenerAdapter{
 			OnGuildReady: func(event *events.GuildReady) {
 				log.InfoContext(ctx, "Guild ready", "guild", event.Guild.ID.String())
-				log.InfoContext(ctx, "Joined new guild", "guild", event.Guild.ID.String())
-				err = b.sendRegistrationForm(ctx, event)
-				if err != nil {
-					log.ErrorContext(ctx, "Failed to send registration form", "error", err)
-				}
 			},
 			OnGuildsReady: func(event *events.GuildsReady) {
 				log.InfoContext(ctx, "Guilds on shard ready", "shard", event.ShardID())
 			},
 			OnApplicationCommandInteraction: func(event *events.ApplicationCommandInteractionCreate) {
-				cmd := b.commands.Get(event.Data.CommandName())
+				log.DebugContext(ctx, "Command interaction", "command", event.Data.CommandName())
+				cmd := b.commands.GetAppCommand(event.Data.CommandName())
 				if cmd != nil {
 					cmd.Handle(ctx, event)
 				}
 			},
-			OnGuildJoin: func(_ *events.GuildJoin) {
+			OnGuildJoin: func(event *events.GuildJoin) {
+				log.DebugContext(ctx, "Guild join", "guild", event.Guild.ID.String())
+				b.handleGuildJoin(ctx, event)
 			},
 			OnComponentInteraction: func(event *events.ComponentInteractionCreate) {
-				if err = b.handleFormSubmission(ctx, event); err != nil {
-					log.ErrorContext(ctx, "Failed to handle form submission", "error", err)
+				log.DebugContext(ctx, "Component interaction", "custom_id", event.Data.CustomID())
+				cmd := b.commands.GetComponentCommand(event.Data.CustomID())
+				if cmd != nil {
+					cmd.Handle(ctx, event)
+				}
+			},
+			OnModalSubmit: func(event *events.ModalSubmitInteractionCreate) {
+				log.DebugContext(ctx, "Modal submit", "custom_id", event.Data.CustomID)
+				cmd := b.commands.GetComponentCommand(event.Data.CustomID)
+				if cmd != nil {
+					cmd.HandleSubmission(ctx, event)
 				}
 			},
 		}),
@@ -252,28 +260,26 @@ func (b *bot) registerCommands() error {
 	return err
 }
 
-// sendRegistrationForm sends a registration form to the specified guild.
-func (b *bot) sendRegistrationForm(ctx context.Context, event *events.GuildReady) error {
+func (b *bot) handleGuildJoin(ctx context.Context, event *events.GuildJoin) {
 	log := logger.FromContext(ctx)
+	_, err := b.services.Guild.Get(ctx, event.GuildID)
+	if !errors.Is(err, sql.ErrNoRows) {
+		if err != nil {
+			log.ErrorContext(ctx, "Failed to get guild", "error", err)
+		}
+		return
+	}
 
-	_, err := b.conn.Rest().CreateMessage(*event.Guild.SystemChannelID, discord.NewMessageCreateBuilder().
-		AddActionRow(discord.NewTextInput("guild_name", discord.TextInputStyleShort, "Name of the Guild").WithRequired(true)).
-		AddActionRow(discord.NewTextInput("guild_name", discord.TextInputStyleShort, "Name of the Guild").WithRequired(true)).
-		AddActionRow(discord.NewTextInput("guild_realm", discord.TextInputStyleShort, "Server of the Guild").WithRequired(true)).
-		AddActionRow(discord.NewTextInput("guild_region", discord.TextInputStyleShort, "Region of the Guild (EU, US, etc.)").WithRequired(true)).
-		AddActionRow(discord.NewTextInput("guild_faction", discord.TextInputStyleShort, "Faction of the Guild (Alliance, Horde, etc.)").WithRequired(true)).
+	log.InfoContext(ctx, "Joined new guild", "guild", event.Guild.ID.String())
+	_, err = event.Client().Rest().CreateMessage(*event.Guild.SystemChannelID, discord.NewMessageCreateBuilder().
+		SetContent("Hello! I'm Raid Mate, your friendly raid bot. First things first, you need to set up your guild. Click the button below to get started.").
+		AddContainerComponents(
+			discord.NewActionRow(
+				discord.NewDangerButton("Set me up!", "guild"),
+			),
+		).
 		Build(), rest.WithCtx(ctx))
 	if err != nil {
-		log.ErrorContext(ctx, "Failed to send registration form", "error", err)
-		return err
+		log.ErrorContext(ctx, "Failed to send message", "error", err)
 	}
-	return nil
-}
-
-// handleFormSubmission processes the form data when a form is submitted.
-func (b *bot) handleFormSubmission(ctx context.Context, event *events.ComponentInteractionCreate) error { //nolint:unparam // TODO: implement this
-	log := logger.FromContext(ctx)
-	data := event.Data.CustomID()
-	log.InfoContext(ctx, "Form submitted", "data", data)
-	return nil
 }
