@@ -167,6 +167,7 @@ func (b *bot) Shutdown(ctx context.Context) error {
 	return nil
 }
 
+// startBot starts the bot and its components.
 func (b *bot) startBot(ctx context.Context) error {
 	log := logger.FromContext(ctx)
 	err := b.newConnection(ctx)
@@ -207,39 +208,7 @@ func (b *bot) newConnection(ctx context.Context) (err error) {
 				),
 			),
 		),
-		disbot.WithEventListeners(&events.ListenerAdapter{
-			OnGuildReady: func(event *events.GuildReady) {
-				log.InfoContext(ctx, "Guild ready", "guild", event.Guild.ID.String())
-			},
-			OnGuildsReady: func(event *events.GuildsReady) {
-				log.InfoContext(ctx, "Guilds on shard ready", "shard", event.ShardID())
-			},
-			OnApplicationCommandInteraction: func(event *events.ApplicationCommandInteractionCreate) {
-				log.DebugContext(ctx, "Command interaction", "command", event.Data.CommandName())
-				cmd := b.commands.GetAppCommand(event.Data.CommandName())
-				if cmd != nil {
-					cmd.Handle(ctx, event)
-				}
-			},
-			OnGuildJoin: func(event *events.GuildJoin) {
-				log.DebugContext(ctx, "Guild join", "guild", event.Guild.ID.String())
-				b.handleGuildJoin(ctx, event)
-			},
-			OnComponentInteraction: func(event *events.ComponentInteractionCreate) {
-				log.DebugContext(ctx, "Component interaction", "custom_id", event.Data.CustomID())
-				cmd := b.commands.GetComponentCommand(event.Data.CustomID())
-				if cmd != nil {
-					cmd.Handle(ctx, event)
-				}
-			},
-			OnModalSubmit: func(event *events.ModalSubmitInteractionCreate) {
-				log.DebugContext(ctx, "Modal submit", "custom_id", event.Data.CustomID)
-				cmd := b.commands.GetComponentCommand(event.Data.CustomID)
-				if cmd != nil {
-					cmd.HandleSubmission(ctx, event)
-				}
-			},
-		}),
+		disbot.WithEventListeners(b.newEventListeners(ctx)),
 		disbot.WithLogger(log.ToSlog()),
 	)
 	return err
@@ -260,6 +229,45 @@ func (b *bot) registerCommands() error {
 	return err
 }
 
+// newEventListeners creates the event listeners for the bot.
+func (b *bot) newEventListeners(ctx context.Context) *events.ListenerAdapter {
+	log := logger.FromContext(ctx)
+	return &events.ListenerAdapter{
+		OnGuildReady: func(event *events.GuildReady) {
+			log.InfoContext(ctx, "Guild ready", "guild", event.Guild.ID.String())
+		},
+		OnGuildsReady: func(event *events.GuildsReady) {
+			log.InfoContext(ctx, "Guilds on shard ready", "shard", event.ShardID())
+		},
+		OnApplicationCommandInteraction: func(event *events.ApplicationCommandInteractionCreate) {
+			log.DebugContext(ctx, "Command interaction", "command", event.Data.CommandName())
+			cmd := b.commands.GetAppCommand(event.Data.CommandName())
+			if cmd != nil {
+				cmd.Handle(ctx, event)
+			}
+		},
+		OnGuildJoin: func(event *events.GuildJoin) {
+			log.DebugContext(ctx, "Guild join", "guild", event.Guild.ID.String())
+			b.handleGuildJoin(ctx, event)
+		},
+		OnComponentInteraction: func(event *events.ComponentInteractionCreate) {
+			log.DebugContext(ctx, "Component interaction", "custom_id", event.Data.CustomID())
+			cmd := b.commands.GetComponentCommand(event.Data.CustomID())
+			if cmd != nil {
+				cmd.Handle(ctx, event)
+			}
+		},
+		OnModalSubmit: func(event *events.ModalSubmitInteractionCreate) {
+			log.DebugContext(ctx, "Modal submit", "custom_id", event.Data.CustomID)
+			cmd := b.commands.GetComponentCommand(event.Data.CustomID)
+			if cmd != nil {
+				cmd.HandleSubmission(ctx, event)
+			}
+		},
+	}
+}
+
+// handleGuildJoin sends a welcome message to a guild when the bot joins it.
 func (b *bot) handleGuildJoin(ctx context.Context, event *events.GuildJoin) {
 	log := logger.FromContext(ctx)
 	_, err := b.services.Guild.Get(ctx, event.GuildID)
