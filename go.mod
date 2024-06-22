@@ -8,6 +8,7 @@ require (
 	github.com/gofiber/fiber/v3 v3.0.0-beta.2
 	github.com/google/go-github/v62 v62.0.0
 	github.com/lib/pq v1.10.9
+	github.com/lvlcn-t/go-kit/apimanager v0.1.0
 	github.com/lvlcn-t/go-kit/config v0.2.0
 	github.com/lvlcn-t/loggerhead v0.3.1
 )

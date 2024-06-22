@@ -9,8 +9,8 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/gofiber/fiber/v3"
+	"github.com/lvlcn-t/go-kit/apimanager/fiberutils"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/services/feedback"
 )
 
@@ -96,19 +96,19 @@ func (c *Feedback) HandleHTTP(ctx fiber.Ctx) error {
 	err := json.Unmarshal(ctx.Body(), &req)
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error unmarshalling request", "error", err)
-		return api.BadRequestResponse(ctx, "invalid request")
+		return fiberutils.BadRequestResponse(ctx, "invalid request")
 	}
 
 	err = c.validateRequest(req.Feedback)
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error validating request", "error", err)
-		return api.BadRequestResponse(ctx, "invalid feedback")
+		return fiberutils.BadRequestResponse(ctx, "invalid feedback")
 	}
 
 	err = c.service.Submit(ctx.Context(), req, nil)
 	if err != nil {
 		log.ErrorContext(ctx.Context(), "Error submitting feedback", "error", err)
-		return api.InternalServerErrorResponse(ctx, "error submitting feedback")
+		return fiberutils.InternalServerErrorResponse(ctx, "error submitting feedback")
 	}
 
 	return ctx.Status(http.StatusOK).JSON(fiber.Map{"status": http.StatusText(http.StatusOK)})

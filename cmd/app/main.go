@@ -19,7 +19,7 @@ var version string
 
 func main() {
 	_ = version
-	log := logger.NewLogger()
+	log := logger.NewLogger(logger.Options{Level: "debug", Format: "text"})
 	ctx := logger.IntoContext(context.Background(), log)
 
 	var cfgPath string

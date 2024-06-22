@@ -9,8 +9,8 @@ import (
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gofiber/fiber/v3"
+	"github.com/lvlcn-t/go-kit/apimanager/fiberutils"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/bot/colors"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
@@ -81,13 +81,13 @@ func (c *Profile) Handle(ctx context.Context, event *events.ApplicationCommandIn
 func (c *Profile) HandleHTTP(ctx fiber.Ctx) error {
 	log := logger.FromContext(ctx.UserContext()).With("command", c.Name())
 
-	gid, err := api.Params(ctx, "guildID", snowflake.Parse)
+	gid, err := fiberutils.Params(ctx, "guildID", snowflake.Parse)
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error parsing guild ID", "error", err)
-		return api.BadRequestResponse(ctx, "missing or invalid guild ID")
+		return fiberutils.BadRequestResponse(ctx, "missing or invalid guild ID")
 	}
 
-	typ, err := api.Params(ctx, "name", func(s string) (string, error) {
+	typ, err := fiberutils.Params(ctx, "name", func(s string) (string, error) {
 		switch s {
 		case "user", "guild":
 			return s, nil
@@ -97,12 +97,12 @@ func (c *Profile) HandleHTTP(ctx fiber.Ctx) error {
 	})
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error getting name", "error", err)
-		return api.BadRequestResponse(ctx, err.Error())
+		return fiberutils.BadRequestResponse(ctx, err.Error())
 	}
 
 	username := ctx.Query("username")
 	if typ == "user" && username == "" {
-		return api.BadRequestResponse(ctx, "missing username")
+		return fiberutils.BadRequestResponse(ctx, "missing username")
 	}
 
 	profile, err := c.service.GetProfile(ctx.Context(), &guild.RequestProfile{
@@ -112,7 +112,7 @@ func (c *Profile) HandleHTTP(ctx fiber.Ctx) error {
 	})
 	if err != nil {
 		log.ErrorContext(ctx.Context(), "Error getting profile", "error", err)
-		return api.InternalServerErrorResponse(ctx, "Error while getting profile")
+		return fiberutils.InternalServerErrorResponse(ctx, "Error while getting profile")
 	}
 
 	return ctx.Status(http.StatusOK).JSON(fiber.Map{"profile": profile})

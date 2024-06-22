@@ -14,8 +14,8 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/disgo/sharding"
+	"github.com/lvlcn-t/go-kit/apimanager"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/bot/colors"
 	"github.com/lvlcn-t/raid-mate/internal/bot/commands"
 	"github.com/lvlcn-t/raid-mate/internal/services"
@@ -54,7 +54,7 @@ type bot struct {
 	// cfg is the bot configuration.
 	cfg Config
 	// api is the API server.
-	api api.Server
+	api apimanager.Server
 	// commands is the collection of commands.
 	commands commands.Collection
 	// services is the collection of services.
@@ -74,8 +74,12 @@ type bot struct {
 // New creates a new bot instance.
 func New(cfg Config, svcs services.Collection) (Bot, error) {
 	b := &bot{
-		cfg:      cfg,
-		api:      api.NewServer(&api.Config{Address: ":8080"}),
+		cfg: cfg,
+		api: apimanager.New(&apimanager.Config{
+			Address:           ":8080",
+			BasePath:          "/api",
+			UseDefaultHealthz: true,
+		}),
 		commands: commands.NewCollection(svcs),
 		services: svcs,
 		conn:     nil,
@@ -85,7 +89,7 @@ func New(cfg Config, svcs services.Collection) (Bot, error) {
 		once:     sync.Once{},
 	}
 
-	err := b.api.Mount(api.RouteGroup{
+	err := b.api.MountGroup(apimanager.RouteGroup{
 		Path: "/v1",
 		App:  b.commands.Router(),
 	})

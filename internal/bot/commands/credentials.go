@@ -11,8 +11,8 @@ import (
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gofiber/fiber/v3"
+	"github.com/lvlcn-t/go-kit/apimanager/fiberutils"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/api"
 	"github.com/lvlcn-t/raid-mate/internal/database/repo"
 	"github.com/lvlcn-t/raid-mate/internal/services/guild"
 )
@@ -100,19 +100,19 @@ func (c *Credentials) HandleHTTP(ctx fiber.Ctx) error {
 	err := json.Unmarshal(ctx.Body(), &req)
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error unmarshalling request", "error", err)
-		return api.BadRequestResponse(ctx, "malformed request")
+		return fiberutils.BadRequestResponse(ctx, "malformed request")
 	}
 
-	gid, err := api.Params(ctx, "guildID", snowflake.Parse)
+	gid, err := fiberutils.Params(ctx, "guildID", snowflake.Parse)
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error parsing guild ID", "error", err)
-		return api.BadRequestResponse(ctx, "missing or invalid guild ID")
+		return fiberutils.BadRequestResponse(ctx, "missing or invalid guild ID")
 	}
 
 	err = c.validateRequest(req.Account)
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error validating request", "error", err)
-		return api.BadRequestResponse(ctx, err.Error())
+		return fiberutils.BadRequestResponse(ctx, err.Error())
 	}
 
 	credentials, err := c.service.GetCredentials(ctx.UserContext(), repo.GetCredentialsParams{
@@ -121,7 +121,7 @@ func (c *Credentials) HandleHTTP(ctx fiber.Ctx) error {
 	})
 	if err != nil {
 		log.ErrorContext(ctx.Context(), "Error getting credentials", "error", err)
-		return api.InternalServerErrorResponse(ctx, "error getting credentials")
+		return fiberutils.InternalServerErrorResponse(ctx, "error getting credentials")
 	}
 
 	return ctx.Status(http.StatusOK).JSON(fiber.Map{"username": credentials.Username, "password": credentials.Password})
