@@ -1,15 +1,14 @@
 package config
 
 import (
-	"context"
 	"errors"
 	"reflect"
 
 	"github.com/lvlcn-t/go-kit/apimanager"
 	"github.com/lvlcn-t/go-kit/config"
-	"github.com/lvlcn-t/raid-mate/internal/bot"
-	"github.com/lvlcn-t/raid-mate/internal/database"
-	"github.com/lvlcn-t/raid-mate/internal/services"
+	"github.com/lvlcn-t/raid-mate/app/bot"
+	"github.com/lvlcn-t/raid-mate/app/database"
+	"github.com/lvlcn-t/raid-mate/app/services"
 )
 
 // Config is the configuration for the application.
@@ -22,6 +21,8 @@ type Config struct {
 	API apimanager.Config `yaml:"api" mapstructure:"api"`
 	// Database is the configuration for the database.
 	Database database.Config `yaml:"database" mapstructure:"database"`
+	// version is the version of the application.
+	Version string `yaml:"-" mapstructure:"-"`
 }
 
 // IsEmpty returns whether the configuration is empty.
@@ -31,7 +32,7 @@ func (c Config) IsEmpty() bool { //nolint:gocritic // The viper cannot handle po
 }
 
 // Validate validates the configuration.
-func (c *Config) Validate(_ context.Context) error {
+func (c *Config) Validate() error {
 	return errors.Join(c.Bot.Validate(), c.Services.Validate(), c.API.Validate(), c.Database.Validate())
 }
 

@@ -4,16 +4,18 @@ INSERT INTO guilds (
         name,
         server_name,
         server_region,
-        server_realm
+        server_realm,
+        faction
     )
-VALUES ($1, $2, $3, $4, $5);
+VALUES ($1, $2, $3, $4, $5, $6);
 
 -- name: ListGuilds :many
 SELECT id,
     name,
     server_name,
     server_region,
-    server_realm
+    server_realm,
+    faction
 FROM guilds;
 
 -- name: GetGuild :one
@@ -21,7 +23,8 @@ SELECT id,
     name,
     server_name,
     server_region,
-    server_realm
+    server_realm,
+    faction
 FROM guilds
 WHERE id = $1;
 
@@ -30,8 +33,9 @@ UPDATE guilds
 SET name = $1,
     server_name = $2,
     server_region = $3,
-    server_realm = $4
-WHERE id = $5
+    server_realm = $4,
+    faction = $5
+WHERE id = $6
 RETURNING *;
 
 -- name: DeleteGuild :exec

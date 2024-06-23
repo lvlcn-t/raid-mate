@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/disgoorg/disgo"
@@ -14,14 +13,12 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/disgo/sharding"
-	"github.com/lvlcn-t/go-kit/apimanager"
+	"github.com/gofiber/fiber/v3"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/bot/colors"
-	"github.com/lvlcn-t/raid-mate/internal/bot/commands"
-	"github.com/lvlcn-t/raid-mate/internal/services"
+	"github.com/lvlcn-t/raid-mate/app/bot/colors"
+	"github.com/lvlcn-t/raid-mate/app/bot/commands"
+	"github.com/lvlcn-t/raid-mate/app/services"
 )
-
-const shutdownTimeout = 40 * time.Second
 
 var _ Bot = (*bot)(nil)
 
@@ -31,6 +28,8 @@ type Bot interface {
 	Run(ctx context.Context) error
 	// Shutdown stops the bot.
 	Shutdown(ctx context.Context) error
+	// Router returns the router for the bot's API.
+	Router() fiber.Router
 }
 
 // Config is the configuration for the bot.
@@ -53,51 +52,28 @@ func (c *Config) Validate() error {
 type bot struct {
 	// cfg is the bot configuration.
 	cfg Config
-	// api is the API server.
-	api apimanager.Server
 	// commands is the collection of commands.
-	commands commands.Collection
+	commands *commands.Collection
 	// services is the collection of services.
-	services services.Collection
+	services *services.Collection
 	// conn is the Discord connection.
 	conn disbot.Client
 	// app is the bot's application info.
 	app *discord.Application
-	// errCh is the channel to signal errors.
-	errCh chan error
-	// done is the channel to signal the bot is done.
+	// done is the channel for when the bot is done.
 	done chan struct{}
-	// once is the sync.Once to ensure the bot is only shutdown once.
-	once sync.Once
 }
 
 // New creates a new bot instance.
-func New(cfg Config, svcs services.Collection) (Bot, error) {
-	b := &bot{
-		cfg: cfg,
-		api: apimanager.New(&apimanager.Config{
-			Address:           ":8080",
-			BasePath:          "/api",
-			UseDefaultHealthz: true,
-		}),
+func New(cfg Config, svcs *services.Collection) Bot {
+	return &bot{
+		cfg:      cfg,
 		commands: commands.NewCollection(svcs),
 		services: svcs,
 		conn:     nil,
 		app:      nil,
-		errCh:    make(chan error, 1),
 		done:     make(chan struct{}, 1),
-		once:     sync.Once{},
 	}
-
-	err := b.api.MountGroup(apimanager.RouteGroup{
-		Path: "/v1",
-		App:  b.commands.Router(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
 }
 
 // Run starts the bot and blocks until it is stopped.
@@ -106,13 +82,7 @@ func (b *bot) Run(ctx context.Context) error {
 	defer cancel()
 	log := logger.FromContext(ctx)
 
-	err := b.services.Connect()
-	if err != nil {
-		log.ErrorContext(ctx, "Failed to connect services", "error", err)
-		return err
-	}
-
-	err = b.startBot(ctx)
+	err := b.launchBot(ctx)
 	defer func() {
 		if b.conn != nil {
 			b.conn.Close(ctx)
@@ -123,60 +93,36 @@ func (b *bot) Run(ctx context.Context) error {
 		return err
 	}
 
-	go func() {
-		err = b.api.Run(ctx)
-		if err != nil {
-			log.ErrorContext(ctx, "Failed to start API server", "error", err)
-			b.errCh <- err
-		}
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return b.Shutdown(ctx)
-		case <-b.done:
-			return nil
-		case err := <-b.errCh:
-			if err != nil {
-				return errors.Join(err, b.Shutdown(ctx))
-			}
-		}
+	select {
+	case <-ctx.Done():
+		return b.Shutdown(ctx)
+	case <-b.done:
+		return nil
 	}
 }
 
-// Shutdown stops the bot and all its components.
+// Shutdown shuts down the bot.
 func (b *bot) Shutdown(ctx context.Context) error {
-	var errs *ErrShutdown
-
-	b.once.Do(func() {
-		defer close(b.done)
-		defer close(b.errCh)
-		errs = &ErrShutdown{
-			ctxErr: ctx.Err(),
-		}
-
-		c, cancel := context.WithTimeout(ctx, shutdownTimeout)
-		defer cancel()
-
-		errs.svcErr = b.services.Close(c)
-		errs.apiErr = b.api.Shutdown(c)
-
-		if !errs.HasErrors() {
-			// Send the done signal to shutdown the bot if the shutdown wasn't caused by an error.
-			b.done <- struct{}{}
-		}
-	})
-
-	if errs != nil && errs.HasErrors() {
-		return errs
+	// This defer is necessary to ensure that the bot is shut down properly
+	// if the shutdown was triggered by calling Shutdown instead of per context cancellation.
+	defer func() {
+		b.done <- struct{}{}
+		close(b.done)
+	}()
+	if errors.Is(ctx.Err(), context.Canceled) {
+		return nil
 	}
 
-	return nil
+	return ctx.Err()
 }
 
-// startBot starts the bot and its components.
-func (b *bot) startBot(ctx context.Context) error {
+// Router returns the router for the bot's API.
+func (b *bot) Router() fiber.Router {
+	return b.commands.Router()
+}
+
+// launchBot starts the bot and registers its commands.
+func (b *bot) launchBot(ctx context.Context) error {
 	log := logger.FromContext(ctx)
 	err := b.newConnection(ctx)
 	if err != nil {
@@ -184,13 +130,13 @@ func (b *bot) startBot(ctx context.Context) error {
 		return err
 	}
 
-	b.app, err = b.conn.Rest().GetBotApplicationInfo()
+	b.app, err = b.conn.Rest().GetBotApplicationInfo(rest.WithCtx(ctx))
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to get bot application info", "error", err)
 		return err
 	}
 
-	err = b.registerCommands()
+	err = b.registerCommands(ctx)
 	if err != nil {
 		log.ErrorContext(ctx, "Failed to register commands", "error", err)
 		return err
@@ -229,12 +175,12 @@ func (b *bot) newConnection(ctx context.Context) (err error) {
 }
 
 // registerCommands registers the bot's commands with Discord.
-func (b *bot) registerCommands() error {
+func (b *bot) registerCommands(ctx context.Context) error {
 	infos := b.commands.Infos()
-	_, err := b.conn.Rest().SetGlobalCommands(b.conn.ApplicationID(), infos)
+	_, err := b.conn.Rest().SetGlobalCommands(b.conn.ApplicationID(), infos, rest.WithCtx(ctx))
 	if err != nil {
 		for _, info := range infos {
-			_, cErr := b.conn.Rest().CreateGlobalCommand(b.conn.ApplicationID(), info)
+			_, cErr := b.conn.Rest().CreateGlobalCommand(b.conn.ApplicationID(), info, rest.WithCtx(ctx))
 			if cErr != nil {
 				err = errors.Join(err, cErr)
 			}

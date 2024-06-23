@@ -28,15 +28,15 @@ db-down: migrate-down
 
 .PHONY: new-migration
 new-migration:
-	@migrate create -ext sql -dir ./internal/database/migrations -seq $(name)
+	@migrate create -ext sql -dir ./app/database/migrations -seq $(name)
 
 .PHONY: migrate-up
 migrate-up:
-	@migrate -path internal/database/migrations -database "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" -verbose up
+	@migrate -path app/database/migrations -database "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" -verbose up
 
 .PHONY: migrate-down
 migrate-down:
-	@migrate -path internal/database/migrations -database "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" -verbose down -all
+	@migrate -path app/database/migrations -database "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable" -verbose down -all
 
 .PHONY: generate
 generate:

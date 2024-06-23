@@ -11,7 +11,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/lvlcn-t/go-kit/apimanager/fiberutils"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/services/feedback"
+	"github.com/lvlcn-t/raid-mate/app/services/feedback"
 )
 
 var (

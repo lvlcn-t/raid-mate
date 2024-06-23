@@ -6,7 +6,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/gofiber/fiber/v3"
-	"github.com/lvlcn-t/raid-mate/internal/services"
+	"github.com/lvlcn-t/raid-mate/app/services"
 )
 
 // Collection is a collection of commands.
@@ -26,8 +26,8 @@ type Collection struct {
 }
 
 // NewCollection creates a new collection of commands.
-func NewCollection(svcs services.Collection) Collection {
-	c := Collection{
+func NewCollection(svcs *services.Collection) *Collection {
+	c := &Collection{
 		logs:        newLogs(svcs.Guild),
 		credentials: newCredentials(svcs.Guild),
 		feedback:    newFeedback(svcs.Feedback),

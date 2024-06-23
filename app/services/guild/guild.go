@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/disgoorg/snowflake/v2"
-	"github.com/lvlcn-t/raid-mate/internal/database/repo"
+	"github.com/lvlcn-t/raid-mate/app/database/repo"
 )
 
 // Service is the interface for the guild service.

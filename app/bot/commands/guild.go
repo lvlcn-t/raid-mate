@@ -7,8 +7,8 @@ import (
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/database/repo"
-	"github.com/lvlcn-t/raid-mate/internal/services/guild"
+	"github.com/lvlcn-t/raid-mate/app/database/repo"
+	"github.com/lvlcn-t/raid-mate/app/services/guild"
 )
 
 type Guild struct {

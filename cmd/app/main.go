@@ -8,19 +8,17 @@ import (
 	"syscall"
 
 	"github.com/lvlcn-t/loggerhead/logger"
-	"github.com/lvlcn-t/raid-mate/internal/bot"
-	"github.com/lvlcn-t/raid-mate/internal/config"
-	"github.com/lvlcn-t/raid-mate/internal/database"
-	"github.com/lvlcn-t/raid-mate/internal/services"
+	"github.com/lvlcn-t/raid-mate/app"
+	"github.com/lvlcn-t/raid-mate/app/config"
 )
 
 // version is set on build time
 var version string
 
 func main() {
-	_ = version
-	log := logger.NewLogger(logger.Options{Level: "debug", Format: "text"})
-	ctx := logger.IntoContext(context.Background(), log)
+	log := logger.NewLogger()
+	ctx, cancel := logger.NewContextWithLogger(logger.IntoContext(context.Background(), log))
+	defer cancel()
 
 	var cfgPath string
 	flag.StringVar(&cfgPath, "config", "", "Path to the configuration file")
@@ -31,34 +29,30 @@ func main() {
 		log.FatalContext(ctx, "Failed to load configuration", "error", err)
 	}
 
-	err = cfg.Validate(ctx)
+	err = cfg.Validate()
 	if err != nil {
 		log.FatalContext(ctx, "Invalid configuration", "error", err)
 	}
+	cfg.Version = version
 
 	sigChan := make(chan os.Signal, 2)
 	defer close(sigChan)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	db, err := database.New(&cfg.Database)
+	application, err := app.New(&cfg)
 	if err != nil {
-		log.FatalContext(ctx, "Failed to create database connection", "error", err)
-	}
-
-	b, err := bot.New(cfg.Bot, services.NewCollection(&cfg.Services, db))
-	if err != nil {
-		log.FatalContext(ctx, "Failed to create bot", "error", err)
+		log.FatalContext(ctx, "Failed to create application", "error", err)
 	}
 
 	cErr := make(chan error, 1)
 	go func() {
-		cErr <- b.Run(ctx)
+		cErr <- application.Run(ctx)
 	}()
 
 	select {
 	case <-sigChan:
 		log.InfoContext(ctx, "Received signal, shutting down")
-		err = b.Shutdown(ctx)
+		err = application.Shutdown(ctx)
 		<-cErr
 	case err = <-cErr:
 	}

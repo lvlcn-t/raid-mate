@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/lvlcn-t/raid-mate/internal/services/feedback"
-	"github.com/lvlcn-t/raid-mate/internal/services/guild"
+	"github.com/lvlcn-t/raid-mate/app/services/feedback"
+	"github.com/lvlcn-t/raid-mate/app/services/guild"
 )
 
 // Collection is the collection of services.
@@ -28,8 +28,8 @@ func (c *Config) Validate() error {
 }
 
 // NewCollection creates a new collection of services.
-func NewCollection(c *Config, db *sql.DB) Collection {
-	return Collection{
+func NewCollection(c *Config, db *sql.DB) *Collection {
+	return &Collection{
 		Feedback: feedback.NewService(&c.Feedback),
 		Guild:    guild.NewService(&c.Guild, db),
 	}
