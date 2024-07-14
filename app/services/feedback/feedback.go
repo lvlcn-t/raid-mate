@@ -24,6 +24,14 @@ type Request struct {
 	UserID   snowflake.ID `json:"user_id"`
 }
 
+func (r Request) Validate() error {
+	var err error
+	if r.Feedback == "" {
+		err = errors.New("feedback is required")
+	}
+	return err
+}
+
 // feedback is the service for the feedback.
 // It is a composite service that can use multiple services.
 type feedback struct {

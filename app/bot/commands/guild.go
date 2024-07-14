@@ -26,6 +26,21 @@ func newGuild(svc guild.Service) *Guild {
 	}
 }
 
+const (
+	// minRealmLength is the minimum length of the realm name.
+	minRealmLength = 2
+	// maxRealmLength is the maximum length of the realm name.
+	maxRealmLength = 30
+	// minRegionLength is the minimum length of the region name.
+	minRegionLength = 2
+	// maxRegionLength is the maximum length of the region name.
+	maxRegionLength = 2
+	// minFactionLength is the minimum length of the faction name.
+	minFactionLength = 5
+	// maxFactionLength is the maximum length of the faction name.
+	maxFactionLength = 8
+)
+
 // Handle is the handler for the command that is called when the event is triggered.
 func (c *Guild) Handle(ctx context.Context, event *events.ComponentInteractionCreate) {
 	log := logger.FromContext(ctx).With("command", c.Name())
@@ -38,15 +53,15 @@ func (c *Guild) Handle(ctx context.Context, event *events.ComponentInteractionCr
 			),
 			discord.NewActionRow(
 				discord.NewTextInput("guild_realm", discord.TextInputStyleShort, "Realm of the Guild").
-					WithRequired(true).WithPlaceholder("Draenor").WithMinLength(2).WithMaxLength(30), //nolint:mnd // Don't allow too short or too long realm names
+					WithRequired(true).WithPlaceholder("Draenor").WithMinLength(minRealmLength).WithMaxLength(maxRealmLength),
 			),
 			discord.NewActionRow(
 				discord.NewTextInput("guild_region", discord.TextInputStyleShort, "Region of the Guild (EU, US, etc.)").
-					WithRequired(true).WithPlaceholder("EU").WithMinLength(2).WithMaxLength(2),
+					WithRequired(true).WithPlaceholder("EU").WithMinLength(minRegionLength).WithMaxLength(maxRegionLength),
 			),
 			discord.NewActionRow(
 				discord.NewTextInput("guild_faction", discord.TextInputStyleShort, "Faction of the Guild (Alliance / Horde)").
-					WithRequired(true).WithPlaceholder("Horde").WithMinLength(5).WithMaxLength(8), //nolint:mnd // Character limits
+					WithRequired(true).WithPlaceholder("Horde").WithMinLength(minFactionLength).WithMaxLength(maxFactionLength),
 			),
 		).
 		SetCustomID("guild").

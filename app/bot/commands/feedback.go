@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -92,8 +91,7 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 func (c *Feedback) HandleHTTP(ctx fiber.Ctx) error {
 	log := logger.FromContext(ctx.UserContext()).With("command", c.Name())
 
-	var req feedback.Request
-	err := json.Unmarshal(ctx.Body(), &req)
+	req, err := fiberutils.BodyWithValidation[feedback.Request](ctx)
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error unmarshalling request", "error", err)
 		return fiberutils.BadRequestResponse(ctx, "invalid request")

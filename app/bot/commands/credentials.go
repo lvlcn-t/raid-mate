@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -96,8 +95,7 @@ func (c *Credentials) HandleHTTP(ctx fiber.Ctx) error {
 		Account string `json:"account"`
 	}
 
-	var req request
-	err := json.Unmarshal(ctx.Body(), &req)
+	req, err := fiberutils.Body[request](ctx)
 	if err != nil {
 		log.DebugContext(ctx.Context(), "Error unmarshalling request", "error", err)
 		return fiberutils.BadRequestResponse(ctx, "malformed request")
