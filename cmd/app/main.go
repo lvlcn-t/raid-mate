@@ -28,18 +28,13 @@ func main() {
 	if err != nil {
 		log.FatalContext(ctx, "Failed to load configuration", "error", err)
 	}
-
-	err = cfg.Validate()
-	if err != nil {
-		log.FatalContext(ctx, "Invalid configuration", "error", err)
-	}
 	cfg.Version = version
 
 	sigChan := make(chan os.Signal, 2)
 	defer close(sigChan)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	application, err := app.New(&cfg)
+	application, err := app.New(cfg)
 	if err != nil {
 		log.FatalContext(ctx, "Failed to create application", "error", err)
 	}

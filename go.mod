@@ -3,13 +3,13 @@ module github.com/lvlcn-t/raid-mate
 go 1.22
 
 require (
-	github.com/disgoorg/disgo v0.18.8
-	github.com/disgoorg/snowflake/v2 v2.0.1
+	github.com/disgoorg/disgo v0.18.9
+	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
 	github.com/google/go-github/v62 v62.0.0
 	github.com/lib/pq v1.10.9
-	github.com/lvlcn-t/go-kit/apimanager v0.2.1
-	github.com/lvlcn-t/go-kit/config v0.2.1
+	github.com/lvlcn-t/go-kit/apimanager v0.3.0
+	github.com/lvlcn-t/go-kit/config v0.3.0
 	github.com/lvlcn-t/loggerhead v0.3.1
 )
 
@@ -32,6 +32,7 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/lvlcn-t/go-kit/lists v0.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
@@ -54,7 +55,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
-	golang.org/x/exp v0.0.0-20240707233637-46b078467d37 // indirect
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/oauth2 v0.21.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
