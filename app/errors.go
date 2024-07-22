@@ -10,7 +10,6 @@ type errShutdown struct {
 	ctxErr error
 	apiErr error
 	botErr error
-	svcErr error
 }
 
 // Error returns the error message.

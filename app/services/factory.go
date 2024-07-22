@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 
@@ -33,14 +32,4 @@ func NewCollection(c *Config, db *sql.DB) *Collection {
 		Feedback: feedback.NewService(&c.Feedback),
 		Guild:    guild.NewService(&c.Guild, db),
 	}
-}
-
-func (c *Collection) Connect() error {
-	// TODO: connect all services
-	return nil
-}
-
-func (c *Collection) Close(_ context.Context) error {
-	// TODO: close all services
-	return nil
 }

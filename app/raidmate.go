@@ -64,12 +64,6 @@ func New(cfg *config.Config) (*RaidMate, error) {
 func (r *RaidMate) Run(ctx context.Context) error {
 	log := logger.FromContext(ctx)
 
-	err := r.services.Connect()
-	if err != nil {
-		log.ErrorContext(ctx, "Failed to connect to services", err)
-		return err
-	}
-
 	go func() {
 		err := r.api.Run(ctx)
 		if err != nil {
@@ -112,7 +106,6 @@ func (r *RaidMate) Shutdown(ctx context.Context) error {
 
 		errs.apiErr = r.api.Shutdown(c)
 		errs.botErr = r.bot.Shutdown(c)
-		errs.svcErr = r.services.Close(c)
 	})
 	if errs != nil && errs.HasErrors() {
 		return errs
