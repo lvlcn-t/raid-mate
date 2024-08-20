@@ -1,6 +1,6 @@
 module github.com/lvlcn-t/raid-mate
 
-go 1.22
+go 1.23
 
 require (
 	github.com/disgoorg/disgo v0.18.10
