@@ -3,7 +3,7 @@ module github.com/lvlcn-t/raid-mate
 go 1.23
 
 require (
-	github.com/disgoorg/disgo v0.18.10
+	github.com/disgoorg/disgo v0.18.11
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
 	github.com/google/go-github/v62 v62.0.0
@@ -21,7 +21,7 @@ require (
 	github.com/charmbracelet/log v0.4.0 // indirect
 	github.com/charmbracelet/x/ansi v0.1.4 // indirect
 	github.com/coreos/go-oidc/v3 v3.11.0 // indirect
-	github.com/disgoorg/json v1.1.0 // indirect
+	github.com/disgoorg/json v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.3 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
