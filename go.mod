@@ -3,7 +3,7 @@ module github.com/lvlcn-t/raid-mate
 go 1.23
 
 require (
-	github.com/disgoorg/disgo v0.18.13
+	github.com/disgoorg/disgo v0.18.14
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gofiber/fiber/v3 v3.0.0-beta.3
 	github.com/google/go-github/v62 v62.0.0
