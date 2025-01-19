@@ -6,7 +6,7 @@ require (
 	github.com/disgoorg/disgo v0.18.14
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gofiber/fiber/v3 v3.0.0-beta.4
-	github.com/google/go-github/v62 v62.0.0
+	github.com/google/go-github/v68 v68.0.0
 	github.com/lib/pq v1.10.9
 	github.com/lvlcn-t/go-kit/apimanager v0.4.0
 	github.com/lvlcn-t/go-kit/config v0.3.0

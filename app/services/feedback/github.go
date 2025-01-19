@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/disgoorg/disgo/bot"
-	gh "github.com/google/go-github/v62/github"
+	gh "github.com/google/go-github/v68/github"
 	"github.com/lvlcn-t/loggerhead/logger"
 )
 
