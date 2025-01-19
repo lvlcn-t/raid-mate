@@ -14,25 +14,11 @@ import (
 // githubConfig is the configuration for the GitHub service.
 type githubConfig struct {
 	// Owner is the owner of the repository.
-	Owner string `yaml:"owner" mapstructure:"owner"`
+	Owner string `yaml:"owner" mapstructure:"owner" validate:"required"`
 	// Repo is the repository name.
-	Repo string `yaml:"repo" mapstructure:"repo"`
+	Repo string `yaml:"repo" mapstructure:"repo" validate:"required"`
 	// Token is the GitHub token to authenticate.
-	Token string `yaml:"token" mapstructure:"token"`
-}
-
-func (c *githubConfig) Validate() error {
-	var err error
-	if c.Owner == "" {
-		err = errors.New("services.feedback.github.owner is required")
-	}
-	if c.Repo == "" {
-		err = errors.Join(err, errors.New("services.feedback.github.repo is required"))
-	}
-	if c.Token == "" {
-		err = errors.Join(err, errors.New("services.feedback.github.token is required"))
-	}
-	return err
+	Token string `yaml:"token" mapstructure:"token" validate:"required"`
 }
 
 type github struct {
@@ -72,7 +58,7 @@ type reqIssue struct {
 }
 
 type respIssue struct {
-	IssueId int32
+	IssueId int64
 	Url     string
 	Message string
 }
@@ -90,7 +76,7 @@ func (s *github) createIssue(ctx context.Context, req *reqIssue) (*respIssue, er
 	}
 
 	return &respIssue{
-		IssueId: int32(issue.GetID()),
+		IssueId: issue.GetID(),
 		Url:     issue.GetHTMLURL(),
 		Message: "Issue created successfully",
 	}, nil

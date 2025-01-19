@@ -8,6 +8,7 @@ import (
 
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/snowflake/v2"
+	"github.com/lvlcn-t/go-kit/config"
 )
 
 // Service is the interface for the service.
@@ -55,16 +56,16 @@ type Config struct {
 
 func (c *Config) Validate() error {
 	if slices.Contains(c.Service, "all") {
-		return errors.Join(c.GitHub.Validate(), c.DM.Validate())
+		return errors.Join(config.Validate(c.GitHub), config.Validate(c.DM))
 	}
 
 	var errs []error
 	for _, svc := range c.Service {
 		switch svc {
 		case "dm":
-			errs = append(errs, c.DM.Validate())
+			errs = append(errs, config.Validate(c.DM))
 		case "github":
-			errs = append(errs, c.GitHub.Validate())
+			errs = append(errs, config.Validate(c.GitHub))
 		default:
 			errs = append(errs, fmt.Errorf("invalid feedback service %q", svc))
 		}

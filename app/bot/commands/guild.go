@@ -79,7 +79,7 @@ func (c *Guild) HandleSubmission(ctx context.Context, event *events.ModalSubmitI
 	_ = event.Data.Text("guild_faction")
 
 	err := c.service.Create(ctx, repo.NewGuildParams{
-		ID:           int64(*event.GuildID()),
+		ID:           int64(*event.GuildID()), //nolint:gosec // Snowflake cannot overflow AFAIK
 		Name:         name,
 		ServerName:   realm,
 		ServerRegion: region,

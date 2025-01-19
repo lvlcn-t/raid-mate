@@ -79,7 +79,7 @@ func (c *Profile) Handle(ctx context.Context, event *events.ApplicationCommandIn
 
 // HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
 func (c *Profile) HandleHTTP(ctx fiber.Ctx) error {
-	log := logger.FromContext(ctx.UserContext()).With("command", c.Name())
+	log := logger.FromContext(ctx.Context()).With("command", c.Name())
 
 	gid, err := fiberutils.Params(ctx, "guildID", snowflake.Parse)
 	if err != nil {

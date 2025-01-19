@@ -35,17 +35,9 @@ type Bot interface {
 // Config is the configuration for the bot.
 type Config struct {
 	// Token is the Discord bot token.
-	Token string `yaml:"token" mapstructure:"token"`
+	Token string `yaml:"token" mapstructure:"token" validate:"required"`
 	// Intents is the list of intents the bot should use.
 	Intents IntentsConfig `yaml:"intents" mapstructure:"intents"`
-}
-
-func (c *Config) Validate() error {
-	var err error
-	if c.Token == "" {
-		err = errors.New("bot.token is required")
-	}
-	return errors.Join(err, c.Intents.Validate())
 }
 
 // bot is the implementation of the Bot interface.

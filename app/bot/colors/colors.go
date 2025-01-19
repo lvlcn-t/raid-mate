@@ -41,12 +41,12 @@ var colors = map[Color]string{
 
 // String returns the color as a (hex) string.
 func (c Color) String() string {
-	return fmt.Sprintf("#%06x", int(c))
+	return fmt.Sprintf("#%06x", int(c)) //nolint:gosec // Cannot overflow as we have a fixed size (0xffffff = 24 bits)
 }
 
 // Int returns the color as an integer.
 func (c Color) Int() int {
-	return int(c)
+	return int(c) //nolint:gosec // Cannot overflow as we have a fixed size (0xffffff = 24 bits)
 }
 
 // Uint returns the color as an unsigned integer.

@@ -5,11 +5,11 @@ import (
 	"flag"
 	"os"
 	"os/signal"
-	"syscall"
 
 	"github.com/lvlcn-t/loggerhead/logger"
 	"github.com/lvlcn-t/raid-mate/app"
 	"github.com/lvlcn-t/raid-mate/app/config"
+	"golang.org/x/sys/unix"
 )
 
 // version is set on build time
@@ -32,7 +32,7 @@ func main() {
 
 	sigChan := make(chan os.Signal, 2)
 	defer close(sigChan)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigChan, unix.SIGINT, unix.SIGTERM)
 
 	application, err := app.New(cfg)
 	if err != nil {

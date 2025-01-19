@@ -89,7 +89,7 @@ func (c *Feedback) Handle(ctx context.Context, event *events.ApplicationCommandI
 
 // HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
 func (c *Feedback) HandleHTTP(ctx fiber.Ctx) error {
-	log := logger.FromContext(ctx.UserContext()).With("command", c.Name())
+	log := logger.FromContext(ctx.Context()).With("command", c.Name())
 
 	req, err := fiberutils.BodyWithValidation[feedback.Request](ctx)
 	if err != nil {

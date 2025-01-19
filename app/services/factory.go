@@ -2,7 +2,6 @@ package services
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/lvlcn-t/raid-mate/app/services/feedback"
 	"github.com/lvlcn-t/raid-mate/app/services/guild"
@@ -17,13 +16,9 @@ type Collection struct {
 // Config is the configuration for the services.
 type Config struct {
 	// Feedback is the configuration for the feedback service.
-	Feedback feedback.Config `yaml:"feedback" mapstructure:"feedback"`
+	Feedback feedback.Config `yaml:"feedback" mapstructure:"feedback" validate:"required"`
 	// Guild is the configuration for the guild service.
-	Guild guild.Config `yaml:"guild" mapstructure:"guild"`
-}
-
-func (c *Config) Validate() error {
-	return errors.Join(c.Feedback.Validate(), c.Guild.Validate())
+	Guild guild.Config `yaml:"guild" mapstructure:"guild" validate:"required"`
 }
 
 // NewCollection creates a new collection of services.

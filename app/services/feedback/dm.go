@@ -15,7 +15,7 @@ import (
 // dmConfig is the configuration for the DM service.
 type dmConfig struct {
 	// ID is the Discord user ID.
-	ID string `yaml:"id" mapstructure:"id"`
+	ID string `yaml:"id" mapstructure:"id" validate:"required"`
 }
 
 func (c *dmConfig) Validate() error {

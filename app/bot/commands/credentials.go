@@ -63,7 +63,7 @@ func (c *Credentials) Handle(ctx context.Context, event *events.ApplicationComma
 	}
 
 	credentials, err := c.service.GetCredentials(ctx, repo.GetCredentialsParams{
-		GuildID: int64(*event.GuildID()),
+		GuildID: int64(*event.GuildID()), //nolint:gosec // Snowflake cannot overflow AFAIK
 		Name:    account,
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ func (c *Credentials) Handle(ctx context.Context, event *events.ApplicationComma
 
 // HandleHTTP is the handler for the command that is called when the HTTP request is triggered.
 func (c *Credentials) HandleHTTP(ctx fiber.Ctx) error {
-	log := logger.FromContext(ctx.UserContext()).With("command", c.Name())
+	log := logger.FromContext(ctx.Context()).With("command", c.Name())
 	type request struct {
 		Account string `json:"account"`
 	}
@@ -113,8 +113,8 @@ func (c *Credentials) HandleHTTP(ctx fiber.Ctx) error {
 		return fiberutils.BadRequestResponse(ctx, err.Error())
 	}
 
-	credentials, err := c.service.GetCredentials(ctx.UserContext(), repo.GetCredentialsParams{
-		GuildID: int64(gid),
+	credentials, err := c.service.GetCredentials(ctx.Context(), repo.GetCredentialsParams{
+		GuildID: int64(gid), //nolint:gosec // Snowflake cannot overflow AFAIK
 		Name:    req.Account,
 	})
 	if err != nil {
@@ -122,7 +122,10 @@ func (c *Credentials) HandleHTTP(ctx fiber.Ctx) error {
 		return fiberutils.InternalServerErrorResponse(ctx, "error getting credentials")
 	}
 
-	return ctx.Status(http.StatusOK).JSON(fiber.Map{"username": credentials.Username, "password": credentials.Password})
+	return ctx.Status(http.StatusOK).JSON(fiber.Map{
+		"username": credentials.Username,
+		"password": credentials.Password,
+	})
 }
 
 // Route returns the route for the command.
