@@ -1,7 +1,6 @@
 module github.com/lvlcn-t/raid-mate
 
 go 1.23
-
 require (
 	github.com/disgoorg/disgo v0.18.15
 	github.com/disgoorg/snowflake/v2 v2.0.3
@@ -11,7 +10,7 @@ require (
 	github.com/lvlcn-t/go-kit/apimanager v0.4.0
 	github.com/lvlcn-t/go-kit/config v0.3.0
 	github.com/lvlcn-t/loggerhead v0.3.1
-	golang.org/x/sys v0.30.0
+	golang.org/x/sys v0.31.0
 )
 
 require (
