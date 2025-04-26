@@ -1,6 +1,8 @@
 module github.com/lvlcn-t/raid-mate
 
 go 1.23
+toolchain go1.24.1
+
 require (
 	github.com/disgoorg/disgo v0.18.15
 	github.com/disgoorg/snowflake/v2 v2.0.3
@@ -10,7 +12,7 @@ require (
 	github.com/lvlcn-t/go-kit/apimanager v0.4.0
 	github.com/lvlcn-t/go-kit/config v0.3.0
 	github.com/lvlcn-t/loggerhead v0.3.1
-	golang.org/x/sys v0.30.0
+	golang.org/x/sys v0.31.0
 )
 
 require (
@@ -59,10 +61,10 @@ require (
 	go.opentelemetry.io/otel v1.34.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
-	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
