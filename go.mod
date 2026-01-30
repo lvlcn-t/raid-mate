@@ -7,7 +7,7 @@ require (
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gofiber/fiber/v3 v3.0.0-rc.1
 	github.com/google/go-github/v68 v68.0.0
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.11.1
 	github.com/lvlcn-t/go-kit/apimanager v0.4.0
 	github.com/lvlcn-t/go-kit/config v0.3.0
 	github.com/lvlcn-t/loggerhead v0.3.1
