@@ -3,7 +3,7 @@ module github.com/lvlcn-t/raid-mate
 go 1.25.0
 
 require (
-	github.com/disgoorg/disgo v0.18.16
+	github.com/disgoorg/disgo v0.19.0
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/gofiber/fiber/v3 v3.0.0-rc.1
 	github.com/google/go-github/v68 v68.0.0
@@ -11,7 +11,7 @@ require (
 	github.com/lvlcn-t/go-kit/apimanager v0.4.0
 	github.com/lvlcn-t/go-kit/config v0.3.0
 	github.com/lvlcn-t/loggerhead v0.3.1
-	golang.org/x/sys v0.40.0
+	golang.org/x/sys v0.41.0
 )
 
 require (
@@ -22,7 +22,9 @@ require (
 	github.com/charmbracelet/log v0.4.0 // indirect
 	github.com/charmbracelet/x/ansi v0.7.0 // indirect
 	github.com/coreos/go-oidc/v3 v3.12.0 // indirect
-	github.com/disgoorg/json v1.2.0 // indirect
+	github.com/disgoorg/godave v0.0.0-20260211222359-4ef3e359a3af // indirect
+	github.com/disgoorg/json/v2 v2.0.0 // indirect
+	github.com/disgoorg/omit v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
@@ -32,7 +34,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/lvlcn-t/go-kit/lists v0.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -57,10 +59,10 @@ require (
 	go.opentelemetry.io/otel v1.34.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.41.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
-	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
